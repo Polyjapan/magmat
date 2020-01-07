@@ -1,0 +1,1 @@
+INSERT INTO inventory.external_loans (external_loan_id, external_lender_id, event_id, pickup_time, return_time, loan_details, pickup_place, return_place, status) VALUES (1, 1, 1, '2020-01-30 09:00:00', '2020-02-20 18:00:00', null, null, null, 'AWAITING_PICKUP');

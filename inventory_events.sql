@@ -1,0 +1,1 @@
+INSERT INTO inventory.events (event_id, event_name, in_conv) VALUES (1, 'Japan Impact 12 ', 0);

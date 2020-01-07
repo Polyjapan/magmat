@@ -1,0 +1,40 @@
+
+# Routes
+# This file defines all application routes (Higher priority routes first)
+# ~~~~
+
+# An example controller showing a sample home page
+GET         /login/:ticket                        controllers.LoginController.login(ticket: String)
+
+GET         /objects/types/                       controllers.ObjectTypesController.getObjectTypes
+GET         /objects/types/complete               controllers.ObjectTypesController.getCompleteObjectTypes
+GET         /objects/types/:id                    controllers.ObjectTypesController.getObjectType(id: Int)
+GET         /objects/types/complete/:id           controllers.ObjectTypesController.getCompleteObjectType(id: Int)
+
+
+GET         /objects/                             controllers.ObjectsController.getAll
+GET         /objects/complete                     controllers.ObjectsController.getAllComplete
+GET         /objects/by-type/:tpe                 controllers.ObjectsController.getByType(tpe: Int)
++nocsrf
+POST        /objects/                             controllers.ObjectsController.createMultiple
+GET         /objects/by-type/complete/:tpe        controllers.ObjectsController.getByTypeComplete(tpe: Int)
+GET         /objects/:id                          controllers.ObjectsController.getOne(id: Int)
+GET         /objects/complete/:id                 controllers.ObjectsController.getOneComplete(id: Int)
+
+
+GET         /external-loans/                      controllers.LoansController.getLoans
+GET         /external-loans/complete              controllers.LoansController.getCompleteLoans
+GET         /external-loans/:id                   controllers.LoansController.getLoan(id: Int)
+GET         /external-loans/complete/:id          controllers.LoansController.getCompleteLoan(id: Int)
+
++nocsrf
+POST        /objects/types                        controllers.ObjectTypesController.createObjectType
++nocsrf
+PUT         /objects/types/:id                    controllers.ObjectTypesController.updateObjectType(id: Int)
+
+GET         /locations                            controllers.LocationsController.getAll
+GET         /locations/filtered/:inConv           controllers.LocationsController.getAllByInConv(inConv: Boolean)
+GET         /locations/:id                        controllers.LocationsController.getOne(id: Int)
+
++nocsrf
+POST        /locations                            controllers.LocationsController.create
