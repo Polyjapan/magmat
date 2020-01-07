@@ -2,7 +2,9 @@ package controllers
 
 import java.time.Clock
 
-import data.SingleObject
+import ch.japanimpact.auth.api.AuthApi
+import data.ObjectStatus.ObjectStatus
+import data.{CompleteObjectLog, ObjectStatus, SingleObject}
 import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
@@ -10,11 +12,11 @@ import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
-
+import utils.AuthenticationPostfix._
 /**
  * @author Louis Vialar
  */
-class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, auth: AuthApi)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }
@@ -29,6 +31,28 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel)
 
   def getOne(id: Int) = Action.async { req =>
     model.getOne(id).map(r => Ok(Json.toJson(r)))
+  }
+
+  def getLogs(id: Int) = Action.async { req =>
+    model.getLogs(id)
+      .flatMap(r => {
+        val ids: Set[Int] = r.flatMap(obj => Set(obj.changedBy, obj.user)).toSet
+        auth.getUserProfiles(ids).map {
+          case Left(map) =>
+            Ok(Json.toJson(r.map(log => CompleteObjectLog(log, map(log.changedBy), map(log.user)))))
+          case Right(_) => InternalServerError
+        }
+      })
+  }
+
+  def changeState(id: Int) = Action.async(parse.json(200)) {req =>
+    val targetState = (req.body \ "targetState").as[ObjectStatus.Value]
+    val userId = (req.body \ "userId").as[Int]
+    val adminId = req.user.userId
+
+    model.changeState(id, userId, adminId, targetState).map(res => {
+      if (res) Ok else BadRequest
+    })
   }
 
   def getByTypeComplete(id: Int) = Action.async { req =>

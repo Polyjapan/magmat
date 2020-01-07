@@ -6,6 +6,8 @@
 # An example controller showing a sample home page
 GET         /login/:ticket                        controllers.LoginController.login(ticket: String)
 
+GET         /people/:id                           controllers.PeopleController.getPerson(id: String)
+
 GET         /objects/types/                       controllers.ObjectTypesController.getObjectTypes
 GET         /objects/types/complete               controllers.ObjectTypesController.getCompleteObjectTypes
 GET         /objects/types/:id                    controllers.ObjectTypesController.getObjectType(id: Int)
@@ -19,7 +21,10 @@ GET         /objects/by-type/:tpe                 controllers.ObjectsController.
 POST        /objects/                             controllers.ObjectsController.createMultiple
 GET         /objects/by-type/complete/:tpe        controllers.ObjectsController.getByTypeComplete(tpe: Int)
 GET         /objects/:id                          controllers.ObjectsController.getOne(id: Int)
+GET         /objects/logs/:id                     controllers.ObjectsController.getLogs(id: Int)
 GET         /objects/complete/:id                 controllers.ObjectsController.getOneComplete(id: Int)
++nocsrf
+PUT         /objects/state/:id                    controllers.ObjectsController.changeState(id: Int)
 
 
 GET         /external-loans/                      controllers.LoansController.getLoans

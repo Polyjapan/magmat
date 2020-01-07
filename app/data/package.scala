@@ -1,9 +1,9 @@
 import java.sql.PreparedStatement
 
-import anorm.{RowParser, ToParameterList, ToStatement}
-import data.{LoanStatus, ObjectStatus}
+import anorm.{Column, ToStatement}
+import ch.japanimpact.auth.api.UserProfile
 import org.joda.time.DateTime
-import play.api.libs.json.{Format, JodaReads, JodaWrites, Json, Reads, Writes}
+import play.api.libs.json._
 
 package object data {
 
@@ -27,6 +27,12 @@ package object data {
     type LoanStatus = Value
     val AwaitingPickup, AwaitingReturn, Returned = Value
   }
+
+
+  case class ObjectLog(objectId: Int, eventId: Int, timestamp: DateTime, changedBy: Int, user: Int,
+                       sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value)
+
+  case class CompleteObjectLog(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
 
   case class SingleObject(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
                           storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
@@ -55,11 +61,6 @@ package object data {
   }
 
   implicit val loanStatusFormat: Format[LoanStatus.Value] = Json.formatEnum(LoanStatus)
-  implicit val loanStatusRowParser: RowParser[LoanStatus.Value] = anorm.SqlParser.str("status").map {
-    case "AWAITING_PICKUP" => LoanStatus.AwaitingPickup
-    case "AWAITING_RETURN" => LoanStatus.AwaitingReturn
-    case "RETURNED" => LoanStatus.Returned
-  }
   implicit val loanStatusStatement: ToStatement[LoanStatus.Value] = (s: PreparedStatement, index: Int, v: LoanStatus.Value) =>
     s.setString(index, v match {
       case LoanStatus.AwaitingPickup => "AWAITING_PICKUP"
@@ -67,20 +68,31 @@ package object data {
       case LoanStatus.Returned => "RETURNED"
     })
 
+  implicit def columnToLoanStatus: Column[LoanStatus.Value] =
+    Column.columnToString.map {
+      case "AWAITING_PICKUP" => LoanStatus.AwaitingPickup
+      case "AWAITING_RETURN" => LoanStatus.AwaitingReturn
+      case "RETURNED" => LoanStatus.Returned
+    }
+
   implicit val objectStatusFormat: Format[ObjectStatus.Value] = Json.formatEnum(ObjectStatus)
-  implicit val objectStatusRowParser: RowParser[ObjectStatus.Value] = anorm.SqlParser.str("objects.status").map {
-    case "IN_STOCK" => ObjectStatus.InStock
-    case "OUT" => ObjectStatus.Out
-    case "LOST" => ObjectStatus.Lost
-    case "RESTING" => ObjectStatus.Resting
-  }
+
+  implicit def columnToObjectStatus: Column[ObjectStatus.Value] =
+    Column.columnToString.map {
+      case "IN_STOCK" => ObjectStatus.InStock
+      case "OUT" => ObjectStatus.Out
+      case "LOST" => ObjectStatus.Lost
+      case "RESTING" => ObjectStatus.Resting
+
+    }
+
   implicit val objectStatusStatement: ToStatement[ObjectStatus.Value] = (s: PreparedStatement, index: Int, v: ObjectStatus.Value) =>
     s.setString(index, v match {
       case ObjectStatus.InStock => "IN_STOCK"
       case ObjectStatus.Out => "OUT"
       case ObjectStatus.Lost => "LOST"
       case ObjectStatus.Resting => "RESTING"
-  })
+    })
 
   implicit val datetimeRead: Reads[DateTime] = JodaReads.DefaultJodaDateTimeReads
   implicit val datetimeWrite: Writes[DateTime] = JodaWrites.JodaDateTimeWrites
@@ -93,6 +105,8 @@ package object data {
   implicit val completeTypeJson: Format[CompleteObjectType] = Json.format[CompleteObjectType]
   implicit val obj: Format[SingleObject] = Json.format[SingleObject]
   implicit val complObj: Format[CompleteObject] = Json.format[CompleteObject]
+  implicit val objLog: Format[ObjectLog] = Json.format[ObjectLog]
+  implicit val complObjLog: Format[CompleteObjectLog] = Json.format[CompleteObjectLog]
 
 
 }

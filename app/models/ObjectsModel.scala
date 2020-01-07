@@ -10,11 +10,12 @@ import utils.AliaserImplicits._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ObjectsModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionContext) {
+class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(implicit ec: ExecutionContext) {
   private val db = dbApi database "default"
 
   implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
   implicit val objectParser: RowParser[SingleObject] = Macro.namedParser[SingleObject]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
+  implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
 
   private val completeObjectParser: RowParser[CompleteObject] = {
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
@@ -64,6 +65,32 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
 
   def getOne(id: Int): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE object_id = {id}").on("id" -> id).as(objectParser.singleOpt)
+  })
+
+  def getLogs(id: Int): Future[List[ObjectLog]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM object_logs WHERE object_id = {id} ORDER BY timestamp DESC")
+      .on("id" -> id)
+      .as(objectLogParser.*)
+  })
+
+  def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value): Future[Boolean] = Future({
+    val eventId = events.getCurrentEventIdSync()
+
+    db.withConnection { implicit connection =>
+      SQL(
+        """INSERT INTO object_logs(object_id, event_id, timestamp, changed_by, user, source_state, target_state)
+          | (SELECT {objectId}, {eventId}, NOW(), {changedBy}, {userId}, status, {targetState} FROM objects WHERE
+          | object_id = {objectId} LIMIT 1)""".stripMargin)
+        .on(
+          "objectId" -> objectId,
+          "eventId" -> eventId,
+          "userId" -> userId,
+          "changedBy" -> changedBy,
+          "targetState" -> targetState
+        )
+        .executeUpdate() == 1 && SQL("UPDATE objects SET status = {status} WHERE object_id = {id}")
+          .on("id" -> objectId, "status" -> targetState).executeUpdate() == 1
+    }
   })
 
   def getOneByAssetTag(tag: String): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
