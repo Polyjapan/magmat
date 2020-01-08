@@ -20,8 +20,8 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
   private val completeObjectRequest: String =
     s"""SELECT * FROM object_types ot
-       |LEFT JOIN storage_location sl on ot.storage_location = sl.storage_location_id
        |LEFT JOIN storage_location sl2 on ot.inconv_storage_location = sl2.storage_location_id
+       |LEFT JOIN storage_location sl on ot.storage_location = sl.storage_location_id
        |LEFT JOIN external_loans el on ot.part_of_loan = el.external_loan_id
        |LEFT JOIN external_lenders e on el.external_lender_id = e.external_lender_id""".stripMargin
 

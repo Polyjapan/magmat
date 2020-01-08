@@ -63,6 +63,14 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAllByType(id).map(r => Ok(Json.toJson(r)))
   }
 
+  def getByLocation(id: Int) = Action.async { req =>
+    model.getAllByLocation(id).map(r => Ok(Json.toJson(r)))
+  }
+
+  def getByLocationComplete(id: Int) = Action.async { req =>
+    model.getAllByLocationComplete(id).map(r => Ok(Json.toJson(r)))
+  }
+
   def createMultiple: Action[Array[SingleObject]] = Action.async(parse.json[Array[SingleObject]]) { req =>
     val tags = req.body.flatMap(obj => obj.assetTag)
 
@@ -82,4 +90,6 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     }
 
   }
+
+
 }

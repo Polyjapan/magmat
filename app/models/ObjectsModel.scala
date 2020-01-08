@@ -59,6 +59,20 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
     SQL("SELECT * FROM objects WHERE object_type_id = {id}").on("id" -> typeId).as(objectParser.*)
   })
 
+  def getAllByLocation(locId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
+    SQL(
+      """SELECT objects.* FROM objects JOIN object_types ot on objects.object_type_id = ot.object_type_id
+         | WHERE objects.inconv_storage_location = {loc}
+         | OR objects.storage_location = {loc}
+         | OR ot.inconv_storage_location = {loc}
+         | OR ot.storage_location = {loc}
+      """.stripMargin).on("loc" -> locId).as(objectParser.*)
+  })
+
+  def getAllByLocationComplete(locId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    SQL(completeRequest + " WHERE objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+  })
+
   def getAllByTypeComplete(typeId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE objects.object_type_id = {id}").on("id" -> typeId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   })
