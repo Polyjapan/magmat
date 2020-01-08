@@ -3,35 +3,35 @@ package controllers
 import java.time.Clock
 
 import ch.japanimpact.auth.api.AuthApi
-import data.ObjectStatus.ObjectStatus
 import data.{CompleteObjectLog, ObjectStatus, SingleObject}
 import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import utils.AuthenticationPostfix._
 
 import scala.concurrent.{ExecutionContext, Future}
-import utils.AuthenticationPostfix._
+
 /**
  * @author Louis Vialar
  */
 class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, auth: AuthApi)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getAllComplete = Action.async { req =>
     model.getAllComplete.map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getOneComplete(id: Int) = Action.async { req =>
     model.getOneComplete(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getOne(id: Int) = Action.async { req =>
     model.getOne(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getLogs(id: Int) = Action.async { req =>
     model.getLogs(id)
@@ -43,9 +43,9 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
           case Right(_) => InternalServerError
         }
       })
-  }
+  }.requiresAuthentication
 
-  def changeState(id: Int) = Action.async(parse.json(200)) {req =>
+  def changeState(id: Int) = Action.async(parse.json(200)) { req =>
     val targetState = (req.body \ "targetState").as[ObjectStatus.Value]
     val userId = (req.body \ "userId").as[Int]
     val adminId = req.user.userId
@@ -53,27 +53,27 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.changeState(id, userId, adminId, targetState).map(res => {
       if (res) Ok else BadRequest
     })
-  }
+  }.requiresAuthentication
 
   def getByTypeComplete(id: Int) = Action.async { req =>
     model.getAllByTypeComplete(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getByType(id: Int) = Action.async { req =>
     model.getAllByType(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getByLocation(id: Int) = Action.async { req =>
     model.getAllByLocation(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getByLocationComplete(id: Int) = Action.async { req =>
     model.getAllByLocationComplete(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def getByLoanComplete(id: Int) = Action.async { req =>
     model.getAllByLoanComplete(id).map(r => Ok(Json.toJson(r)))
-  }
+  }.requiresAuthentication
 
   def createMultiple: Action[Array[SingleObject]] = Action.async(parse.json[Array[SingleObject]]) { req =>
     val tags = req.body.flatMap(obj => obj.assetTag)
@@ -93,7 +93,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       }
     }
 
-  }
+  }.requiresAuthentication
 
 
 }

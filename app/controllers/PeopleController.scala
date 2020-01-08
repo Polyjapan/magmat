@@ -2,17 +2,14 @@ package controllers
 
 import java.time.Clock
 
-import ch.japanimpact.auth.api.AuthApi
-import data.UserSession
 import javax.inject.Inject
-import pdi.jwt.JwtSession
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import utils.PeopleService
 import utils.AuthenticationPostfix._
+import utils.PeopleService
 
-import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.ExecutionContext
 
 /**
  * @author Louis Vialar
