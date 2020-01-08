@@ -45,6 +45,10 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
     SQL("SELECT * FROM object_types").as(objectTypeParser.*)
   })
 
+  def getAllByLoan(loan: Int): Future[List[ObjectType]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM object_types WHERE part_of_loan = {loan}").on("loan" -> loan).as(objectTypeParser.*)
+  })
+
   def getAllComplete: Future[List[CompleteObjectType]] = Future(db.withConnection { implicit connection =>
     SQL(completeObjectRequest).asTry(completeObjectTypeParser.*, completeObjectTypeAliaser).get
   })

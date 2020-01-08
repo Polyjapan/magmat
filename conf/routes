@@ -11,6 +11,7 @@ GET         /people/:id                               controllers.PeopleControll
 GET         /events/current                           controllers.EventsController.getCurrentEvent
 
 GET         /objects/types/                           controllers.ObjectTypesController.getObjectTypes
+GET         /objects/types/by-loan/:loan              controllers.ObjectTypesController.getObjectTypesByLoan(loan: Int)
 GET         /objects/types/complete                   controllers.ObjectTypesController.getCompleteObjectTypes
 GET         /objects/types/:id                        controllers.ObjectTypesController.getObjectType(id: Int)
 GET         /objects/types/complete/:id               controllers.ObjectTypesController.getCompleteObjectType(id: Int)
@@ -24,6 +25,7 @@ GET         /objects/by-location/:loc                 controllers.ObjectsControl
 POST        /objects/                                 controllers.ObjectsController.createMultiple
 GET         /objects/by-type/complete/:tpe            controllers.ObjectsController.getByTypeComplete(tpe: Int)
 GET         /objects/by-location/complete/:loc        controllers.ObjectsController.getByLocationComplete(loc: Int)
+GET         /objects/by-loan/complete/:loc            controllers.ObjectsController.getByLoanComplete(loc: Int)
 GET         /objects/:id                              controllers.ObjectsController.getOne(id: Int)
 GET         /objects/logs/:id                         controllers.ObjectsController.getLogs(id: Int)
 GET         /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int)
@@ -39,6 +41,8 @@ GET         /external-lenders/:id                     controllers.LendersControl
 GET         /external-loans/                          controllers.LoansController.getLoans
 +nocsrf
 POST        /external-loans/                          controllers.LoansController.create
++nocsrf
+PUT         /external-loans/:id/state                 controllers.LoansController.changeState(id: Int)
 GET         /external-loans/complete                  controllers.LoansController.getCompleteLoans
 GET         /external-loans/:id                       controllers.LoansController.getLoan(id: Int)
 GET         /external-loans/complete/:id              controllers.LoansController.getCompleteLoan(id: Int)

@@ -36,6 +36,12 @@ class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionConte
     SQL("SELECT * FROM external_loans").as(loanParser.*)
   })
 
+  def changeState(id: Int, targetState: data.LoanStatus.Value) = Future(db.withConnection { implicit connection =>
+    SQL("UPDATE external_loans SET status = {status} WHERE external_loan_id = {id}")
+      .on("id" -> id, "status" -> targetState)
+      .executeUpdate()
+  })
+
   def getAllComplete: Future[List[CompleteExternalLoan]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest).as(completeParser.*)
   })

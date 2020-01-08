@@ -21,6 +21,10 @@ class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTyp
     model.getAll.map(r => Ok(Json.toJson(r)))
   }
 
+  def getObjectTypesByLoan(loan: Int) = Action.async { req =>
+    model.getAllByLoan(loan).map(r => Ok(Json.toJson(r)))
+  }
+
   def getCompleteObjectTypes = Action.async { req =>
     model.getAllComplete.map(r => Ok(Json.toJson(r)))
   }

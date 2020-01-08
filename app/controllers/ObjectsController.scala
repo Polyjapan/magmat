@@ -71,6 +71,10 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAllByLocationComplete(id).map(r => Ok(Json.toJson(r)))
   }
 
+  def getByLoanComplete(id: Int) = Action.async { req =>
+    model.getAllByLoanComplete(id).map(r => Ok(Json.toJson(r)))
+  }
+
   def createMultiple: Action[Array[SingleObject]] = Action.async(parse.json[Array[SingleObject]]) { req =>
     val tags = req.body.flatMap(obj => obj.assetTag)
 

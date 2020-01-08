@@ -2,7 +2,7 @@ package controllers
 
 import java.time.Clock
 
-import data.{ExternalLender, ExternalLoan, StorageLocation}
+import data.{ExternalLender, ExternalLoan, LoanStatus, ObjectStatus, StorageLocation}
 import javax.inject.Inject
 import models.{LoansModel, StorageModel}
 import play.api.Configuration
@@ -34,4 +34,13 @@ class LoansController @Inject()(cc: ControllerComponents, model: LoansModel)(imp
   def create: Action[ExternalLoan] = Action.async(parse.json[ExternalLoan]) { req =>
     model.create(req.body).map(id => Ok(Json.toJson(id)))
   }
+
+  def changeState(id: Int) = Action.async(parse.json(200)) {req =>
+    val targetState = (req.body \ "targetState").as[LoanStatus.Value]
+
+    model.changeState(id, targetState).map(res => {
+      if (res > 0) Ok else BadRequest
+    })
+  }
+
 }
