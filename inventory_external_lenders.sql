@@ -1,2 +1,0 @@
-INSERT INTO inventory.external_lenders (external_lender_id, name, description, phone_number, email, location) VALUES (1, 'Poséidon VPSI', 'Service Poséidon de la VPSI à l''EPFL', '1234', '1234@epfl.ch', 'MA A0, service desk');
-INSERT INTO inventory.external_lenders (external_lender_id, name, description, phone_number, email, location) VALUES (2, 'AGEPoly', 'Equipe logistique de l''AGEPoly', 'Inconnu', 'logistique@agepoly.ch', 'Généralement en SDC');
