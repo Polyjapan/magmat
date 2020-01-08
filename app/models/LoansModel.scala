@@ -1,17 +1,25 @@
 package models
 
+import java.sql.{PreparedStatement, Timestamp}
+
 import anorm.Macro.ColumnNaming
+import anorm.SqlParser.scalar
 import anorm._
 import data._
 import javax.inject.{Inject, Singleton}
+import org.joda.time.DateTime
+import utils.SqlUtils
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionContext) {
+
   private val db = dbApi database "default"
 
-  implicit val parameterList: ToParameterList[ObjectType] = Macro.toParameters[ObjectType]()
+  // Should not be necessary but still is, somehow.
+  implicit val jodaTimeFix: ToStatement[DateTime] = (s: PreparedStatement, index: Int, v: DateTime) => s.setTimestamp(index, new Timestamp(v.getMillis))
+  implicit val parameterList: ToParameterList[ExternalLoan] = Macro.toParameters[ExternalLoan]()
 
   implicit val loanParser: RowParser[ExternalLoan] = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
   implicit val lenderParser: RowParser[ExternalLender] = Macro.namedParser[ExternalLender]((p : String) => "external_lenders." + ColumnNaming.SnakeCase(p))
@@ -25,7 +33,7 @@ class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionConte
   }
 
   def getAll: Future[List[ExternalLoan]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM object_types").as(loanParser.*)
+    SQL("SELECT * FROM external_loans").as(loanParser.*)
   })
 
   def getAllComplete: Future[List[CompleteExternalLoan]] = Future(db.withConnection { implicit connection =>
@@ -33,10 +41,15 @@ class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionConte
   })
 
   def getOne(id: Int): Future[Option[ExternalLoan]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM object_types WHERE object_type_id = {id}").on("id" -> id).as(loanParser.singleOpt)
+    SQL("SELECT * FROM external_loans WHERE external_loan_id = {id}").on("id" -> id).as(loanParser.singleOpt)
   })
 
   def getOneComplete(id: Int): Future[Option[CompleteExternalLoan]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE external_loan_id = {id}").on("id" -> id).as(completeParser.singleOpt)
   })
+
+  def create(create: ExternalLoan): Future[Int] = Future(db.withConnection { implicit conn =>
+    SqlUtils.insertOne("external_loans", create)
+  })
+
 }

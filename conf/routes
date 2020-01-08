@@ -8,6 +8,8 @@ GET         /login/:ticket                            controllers.LoginControlle
 
 GET         /people/:id                               controllers.PeopleController.getPerson(id: String)
 
+GET         /events/current                           controllers.EventsController.getCurrentEvent
+
 GET         /objects/types/                           controllers.ObjectTypesController.getObjectTypes
 GET         /objects/types/complete                   controllers.ObjectTypesController.getCompleteObjectTypes
 GET         /objects/types/:id                        controllers.ObjectTypesController.getObjectType(id: Int)
@@ -29,7 +31,14 @@ GET         /objects/complete/:id                     controllers.ObjectsControl
 PUT         /objects/state/:id                        controllers.ObjectsController.changeState(id: Int)
 
 
+GET         /external-lenders/                        controllers.LendersController.getLenders
++nocsrf
+POST        /external-lenders/                        controllers.LendersController.create
+GET         /external-lenders/:id                     controllers.LendersController.getLender(id: Int)
+
 GET         /external-loans/                          controllers.LoansController.getLoans
++nocsrf
+POST        /external-loans/                          controllers.LoansController.create
 GET         /external-loans/complete                  controllers.LoansController.getCompleteLoans
 GET         /external-loans/:id                       controllers.LoansController.getLoan(id: Int)
 GET         /external-loans/complete/:id              controllers.LoansController.getCompleteLoan(id: Int)

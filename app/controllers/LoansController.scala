@@ -2,7 +2,7 @@ package controllers
 
 import java.time.Clock
 
-import data.StorageLocation
+import data.{ExternalLender, ExternalLoan, StorageLocation}
 import javax.inject.Inject
 import models.{LoansModel, StorageModel}
 import play.api.Configuration
@@ -14,8 +14,7 @@ import scala.concurrent.ExecutionContext
 /**
  * @author Louis Vialar
  */
-class LoansController @Inject()(cc: ControllerComponents, model
-: LoansModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class LoansController @Inject()(cc: ControllerComponents, model: LoansModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getLoans = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }
@@ -30,5 +29,9 @@ class LoansController @Inject()(cc: ControllerComponents, model
 
   def getLoan(id: Int) = Action.async { req =>
     model.getOne(id).map(r => Ok(Json.toJson(r)))
+  }
+
+  def create: Action[ExternalLoan] = Action.async(parse.json[ExternalLoan]) { req =>
+    model.create(req.body).map(id => Ok(Json.toJson(id)))
   }
 }

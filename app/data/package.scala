@@ -45,7 +45,7 @@ package object data {
 
   case class Event(eventId: Int, eventName: String, inConv: Boolean)
 
-  case class ExternalLoan(externalLoanId: Int, externalLenderId: Int, eventId: Int, pickupTime: DateTime,
+  case class ExternalLoan(externalLoanId: Option[Int], externalLenderId: Int, eventId: Int, pickupTime: DateTime,
                           returnTime: DateTime, loanDetails: Option[String], pickupPlace: Option[String], returnPlace: Option[String],
                           status: LoanStatus.Value)
 

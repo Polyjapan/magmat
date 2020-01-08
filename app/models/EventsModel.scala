@@ -20,4 +20,8 @@ class EventsModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCont
   }
 
   def getCurrentEventIdAsync(): Future[Int] = Future(getCurrentEventIdSync())
+
+  def getCurrentEvent(): Future[Event] = Future(db.withConnection { implicit conn =>
+    SQL("SELECT * FROM events ORDER BY event_id DESC LIMIT 1").as(eventParser.single)
+  })
 }
