@@ -115,6 +115,11 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
     SQL("SELECT * FROM objects WHERE asset_tag = {tag} LIMIT 1").on("tag" -> tag).as(objectParser.singleOpt)
   })
 
+  def getOneCompleteByAssetTag(tag: String): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    SQL(completeRequest + " WHERE asset_tag = {tag} LIMIT 1").on("tag" -> tag)
+      .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
+  })
+
   def getOneComplete(id: Int): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get

@@ -8,7 +8,7 @@ import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
 import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.AuthenticationPostfix._
 
 import scala.collection.MapView
@@ -63,6 +63,16 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
       Ok(json)
     })
+  }.requiresAuthentication
+
+  def getByTag(tag: String) = Action.async { implicit rq =>
+    if (tag.length >= 1 && tag.length < 30) {
+      model.getOneCompleteByAssetTag(tag).map {
+        case Some(obj) => Ok(Json.toJson(obj))
+        case None => NotFound
+      }
+    } else Future(BadRequest)
+
   }.requiresAuthentication
 
   def getAllComplete = Action.async { req =>
