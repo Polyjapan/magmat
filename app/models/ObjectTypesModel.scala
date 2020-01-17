@@ -64,8 +64,8 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
 
   def create(tpe: ObjectType): Future[Option[Int]] = Future(db.withConnection { implicit conn =>
     val parser = scalar[Int]
-    SQL("INSERT INTO object_types(name, description, storage_location, inconv_storage_location, part_of_loan) " +
-      "VALUES ({name}, {description}, {storageLocation}, {inconvStorageLocation}, {partOfLoan})")
+    SQL("INSERT INTO object_types(name, description, storage_location, inconv_storage_location, part_of_loan, requires_signature) " +
+      "VALUES ({name}, {description}, {storageLocation}, {inconvStorageLocation}, {partOfLoan}, {requiresSignature})")
       .bind(tpe)
       .executeInsert(scalar[Int].singleOpt)
   })
@@ -73,7 +73,7 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
   def update(id: Int, tpe: ObjectType): Future[Int] = Future(db.withConnection { implicit conn =>
     val parser = scalar[Int]
     SQL("UPDATE object_types SET name = {name}, description = {description}, storage_location = {storageLocation}, " +
-      "inconv_storage_location = {inconvStorageLocation}, part_of_loan = {partOfLoan} WHERE object_type_id = {id}")
+      "inconv_storage_location = {inconvStorageLocation}, part_of_loan = {partOfLoan}, requires_signature = {requiresSignature} WHERE object_type_id = {id}")
       .bind(tpe)
       .on("id" -> id)
       .executeUpdate()

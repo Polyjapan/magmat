@@ -10,7 +10,7 @@ package object data {
   case class StorageLocation(storageLocationId: Option[Int], inConv: Boolean, room: String, space: String, location: String)
 
   case class ObjectType(objectTypeId: Option[Int], name: String, description: Option[String], storageLocation: Option[Int],
-                        inconvStorageLocation: Option[Int], partOfLoan: Option[Int])
+                        inconvStorageLocation: Option[Int], partOfLoan: Option[Int], requiresSignature: Boolean)
 
   case class CompleteObjectType(objectType: ObjectType, storageLocationObject: Option[StorageLocation],
                                 inconvStorageLocationObject: Option[StorageLocation], partOfLoanObject: Option[CompleteExternalLoan])
@@ -30,7 +30,7 @@ package object data {
 
 
   case class ObjectLog(objectId: Int, eventId: Int, timestamp: DateTime, changedBy: Int, user: Int,
-                       sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value)
+                       sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value, signature: Option[String])
 
   case class CompleteObjectLog(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
 

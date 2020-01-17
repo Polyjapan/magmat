@@ -1,9 +1,13 @@
 package controllers
 
+import java.awt.Image
+import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time.Clock
+import java.util.Base64
 
 import ch.japanimpact.auth.api.AuthApi
 import data.{CompleteObject, CompleteObjectLog, LoanStatus, ObjectStatus, SingleObject, StorageLocation}
+import javax.imageio.ImageIO
 import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
@@ -99,14 +103,44 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       })
   }.requiresAuthentication
 
-  def changeState(id: Int) = Action.async(parse.json(200)) { req =>
+  def changeState(id: Int) = Action.async(parse.json) { req =>
     val targetState = (req.body \ "targetState").as[ObjectStatus.Value]
     val userId = (req.body \ "userId").as[Int]
     val adminId = req.user.userId
+    val signature = (req.body \ "signature").asOpt[String]
+      /*.map(str => str.substring(str.indexOf(",") + 1))
+      .map(data => Base64.getDecoder.decode(data))
+      .map(data => ImageIO.read(new ByteArrayInputStream(data)))
+      .map(img => {
+        import java.awt.Image
+        import java.awt.image.BufferedImage
+        val tmp = img.getScaledInstance(img.getWidth / 2, img.getHeight / 2, Image.SCALE_SMOOTH)
+        val resized = new BufferedImage(img.getWidth / 2, img.getHeight / 2, BufferedImage.TYPE_INT_ARGB)
+        val g2d = resized.createGraphics
+        g2d.drawImage(tmp, 0, 0, null)
+        g2d.dispose()
+        resized
+      })
+      .map(data => {
+        val os = new ByteArrayOutputStream()
+        ImageIO.write(data, "png", os)
 
-    model.changeState(id, userId, adminId, targetState).map(res => {
-      if (res) Ok else BadRequest
-    })
+        "data:image/png;base64," + new String(Base64.getEncoder.encode(os.toByteArray))
+      })*/
+
+    model.getOneComplete(id).flatMap {
+      case Some(co) =>
+        val requiresSignature = if (co.objectType.requiresSignature) targetState == ObjectStatus.InStock || targetState == ObjectStatus.Out else false
+
+        if (requiresSignature && signature.isEmpty) {
+          Future(BadRequest)
+        } else {
+          model.changeState(id, userId, adminId, targetState, signature).map(res => {
+            if (res) Ok else BadRequest
+          })
+        }
+      case None => Future(NotFound)
+    }
   }.requiresAuthentication
 
   def getByTypeComplete(id: Int) = Action.async { req =>

@@ -91,20 +91,21 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
       .as(objectLogParser.*)
   })
 
-  def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value): Future[Boolean] = Future({
+  def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value, signature: Option[String]): Future[Boolean] = Future({
     val eventId = events.getCurrentEventIdSync()
 
     db.withConnection { implicit connection =>
       SQL(
-        """INSERT INTO object_logs(object_id, event_id, timestamp, changed_by, user, source_state, target_state)
-          | (SELECT {objectId}, {eventId}, NOW(), {changedBy}, {userId}, status, {targetState} FROM objects WHERE
+        """INSERT INTO object_logs(object_id, event_id, timestamp, changed_by, user, source_state, target_state, signature)
+          | (SELECT {objectId}, {eventId}, NOW(), {changedBy}, {userId}, status, {targetState}, {signature} FROM objects WHERE
           | object_id = {objectId} LIMIT 1)""".stripMargin)
         .on(
           "objectId" -> objectId,
           "eventId" -> eventId,
           "userId" -> userId,
           "changedBy" -> changedBy,
-          "targetState" -> targetState
+          "targetState" -> targetState,
+          "signature" -> signature
         )
         .executeUpdate() == 1 && SQL("UPDATE objects SET status = {status} WHERE object_id = {id}")
           .on("id" -> objectId, "status" -> targetState).executeUpdate() == 1
