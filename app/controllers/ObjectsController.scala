@@ -47,8 +47,8 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
       def groupLocation[T](objects: List[CompleteObject], extract: CompleteObject => StorageLocation, transform: List[CompleteObject] => T): MapView[String, MapView[String, MapView[String, T]]] = {
         objects.groupBy(o => extract(o).room)
-          .view.mapValues(v => v.groupBy(o => extract(o).space)
-          .view.mapValues(v => v.groupBy(o => extract(o).location).view
+          .view.mapValues(v => v.groupBy(o => extract(o).space.getOrElse("Non Renseigné"))
+          .view.mapValues(v => v.groupBy(o => extract(o).location.getOrElse("Non Renseigné")).view
           .mapValues(transform)
         )
         )

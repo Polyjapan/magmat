@@ -7,7 +7,7 @@ import play.api.libs.json._
 
 package object data {
 
-  case class StorageLocation(storageLocationId: Option[Int], inConv: Boolean, room: String, space: String, location: String)
+  case class StorageLocation(storageLocationId: Option[Int], inConv: Boolean, room: String, space: Option[String], location: Option[String])
 
   case class ObjectType(objectTypeId: Option[Int], name: String, description: Option[String], storageLocation: Option[Int],
                         inconvStorageLocation: Option[Int], partOfLoan: Option[Int], requiresSignature: Boolean)
