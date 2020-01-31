@@ -108,25 +108,6 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     val userId = (req.body \ "userId").as[Int]
     val adminId = req.user.userId
     val signature = (req.body \ "signature").asOpt[String]
-      /*.map(str => str.substring(str.indexOf(",") + 1))
-      .map(data => Base64.getDecoder.decode(data))
-      .map(data => ImageIO.read(new ByteArrayInputStream(data)))
-      .map(img => {
-        import java.awt.Image
-        import java.awt.image.BufferedImage
-        val tmp = img.getScaledInstance(img.getWidth / 2, img.getHeight / 2, Image.SCALE_SMOOTH)
-        val resized = new BufferedImage(img.getWidth / 2, img.getHeight / 2, BufferedImage.TYPE_INT_ARGB)
-        val g2d = resized.createGraphics
-        g2d.drawImage(tmp, 0, 0, null)
-        g2d.dispose()
-        resized
-      })
-      .map(data => {
-        val os = new ByteArrayOutputStream()
-        ImageIO.write(data, "png", os)
-
-        "data:image/png;base64," + new String(Base64.getEncoder.encode(os.toByteArray))
-      })*/
 
     model.getOneComplete(id).flatMap {
       case Some(co) =>
@@ -183,5 +164,18 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
   }.requiresAuthentication
 
+  def updateOne(id: Int): Action[SingleObject] = Action.async(parse.json[SingleObject]) { req =>
+    val tag = req.body.assetTag
+
+
+    tag.map(model.getOneByAssetTag) match {
+      case None => Future(BadRequest("Pas d'asset tag présent"))
+      case Some(future) => future.flatMap {
+        case Some(obj) if obj.objectId.get != id => Future(BadRequest("Asset tag déjà utilisé"))
+        case _ =>
+          model.updateOne(id, req.body).map(_ => Ok)
+      }
+    }
+  }.requiresAuthentication
 
 }

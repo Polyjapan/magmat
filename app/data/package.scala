@@ -41,7 +41,8 @@ package object data {
   case class CompleteObject(`object`: SingleObject, objectType: ObjectType,
                             storageLocationObject: Option[StorageLocation],
                             inconvStorageLocationObject: Option[StorageLocation],
-                            partOfLoanObject: Option[CompleteExternalLoan])
+                            partOfLoanObject: Option[CompleteExternalLoan],
+                            reservedFor: Option[UserProfile] = None)
 
   case class Event(eventId: Int, eventName: String, inConv: Boolean)
 

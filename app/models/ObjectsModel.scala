@@ -3,6 +3,7 @@ package models
 import anorm.Macro.ColumnNaming
 import anorm.SqlParser.scalar
 import anorm._
+import ch.japanimpact.auth.api.AuthApi
 import data._
 import javax.inject.{Inject, Singleton}
 import utils.AliaserImplicits._
@@ -10,7 +11,8 @@ import utils.AliaserImplicits._
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(implicit ec: ExecutionContext) {
+class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth: AuthApi)(implicit ec: ExecutionContext) {
+
   private val db = dbApi database "default"
 
   implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
@@ -27,6 +29,19 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
     objectParser ~ objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {
       case obj ~ tpe ~ incStor ~ outStor ~ lender ~ loan =>
         CompleteObject(obj, tpe, outStor, incStor, loan.flatMap(loanObject => lender.map(lenderObject => CompleteExternalLoan.merge(loanObject, None, lenderObject))))
+    }
+  }
+
+  private def collectReservedFor(objects: List[CompleteObject]): Future[List[CompleteObject]] = {
+    val reservedForSet = objects.flatMap(_.`object`.reservedFor).toSet
+
+    if (reservedForSet.isEmpty) {
+      Future.successful(objects)
+    } else {
+      auth.getUserProfiles(reservedForSet).map {
+        case Left(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.get)))
+        case Right(_) => objects
+      }
     }
   }
 
@@ -53,7 +68,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
 
   def getAllComplete: Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  })
+  }).flatMap(collectReservedFor)
 
   def getAllByType(typeId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE object_type_id = {id}").on("id" -> typeId).as(objectParser.*)
@@ -71,15 +86,15 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
 
   def getAllByLocationComplete(locId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  })
+  }).flatMap(collectReservedFor)
 
   def getAllByLoanComplete(loanId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE objects.actual_part_of_loan = {loan}").on("loan" -> loanId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  })
+  }).flatMap(collectReservedFor)
 
   def getAllByTypeComplete(typeId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE objects.object_type_id = {id}").on("id" -> typeId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  })
+  }).flatMap(collectReservedFor)
 
   def getOne(id: Int): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE object_id = {id}").on("id" -> id).as(objectParser.singleOpt)
@@ -119,17 +134,24 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(impl
   def getOneCompleteByAssetTag(tag: String): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE asset_tag = {tag} LIMIT 1").on("tag" -> tag)
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  })
+  }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
 
   def getOneComplete(id: Int): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
     SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
+  }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
+
+
+
+  def updateOne(id: Int, body: SingleObject) = Future(db.withConnection { implicit conn =>
+    val colNames = List("suffix", "description", "storageLocation", "inconvStorageLocation", "partOfLoan", "reservedFor", "assetTag").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
+
+    SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(body.copy(objectId = Some(id))).executeUpdate()
   })
 
-  def insertAll(obj: Array[SingleObject]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
-    val toParams1: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]
 
-    val params1: List[Seq[NamedParameter]] = obj.toList.map(toParams1)
+  def insertAll(obj: Array[SingleObject]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
+    val params1: List[Seq[NamedParameter]] = obj.toList.map(parameterList)
     val names1: List[String] = params1.head.map(_.name).toList
     val colNames = names1.map(ColumnNaming.SnakeCase) mkString ", "
     val placeholders = names1.map { n => s"{$n}" } mkString ", "

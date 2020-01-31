@@ -29,6 +29,8 @@ GET         /objects/by-type/complete/:tpe            controllers.ObjectsControl
 GET         /objects/by-location/complete/:loc        controllers.ObjectsController.getByLocationComplete(loc: Int)
 GET         /objects/by-loan/complete/:loc            controllers.ObjectsController.getByLoanComplete(loc: Int)
 GET         /objects/:id                              controllers.ObjectsController.getOne(id: Int)
++nocsrf
+PUT         /objects/:id                              controllers.ObjectsController.updateOne(id: Int)
 GET         /objects/logs/:id                         controllers.ObjectsController.getLogs(id: Int)
 GET         /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int)
 +nocsrf
