@@ -35,6 +35,9 @@ GET         /objects/logs/:id                         controllers.ObjectsControl
 GET         /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int)
 +nocsrf
 PUT         /objects/state/:id                        controllers.ObjectsController.changeState(id: Int)
++nocsrf
+POST        /objects/comments/:id                     controllers.ObjectsController.postComment(id: Int)
+GET         /objects/comments/:id                     controllers.ObjectsController.getComments(id: Int)
 
 
 GET         /external-lenders/                        controllers.LendersController.getLenders

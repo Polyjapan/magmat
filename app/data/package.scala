@@ -34,6 +34,10 @@ package object data {
 
   case class CompleteObjectLog(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
 
+  case class ObjectComment(objectId: Int, eventId: Int, timestamp: DateTime, writer: Int, comment: String)
+
+  case class CompleteObjectComment(objectComment: ObjectComment, writer: UserProfile)
+
   case class SingleObject(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
                           storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
                           reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None, depositPlace: Option[String] = None)
@@ -108,6 +112,8 @@ package object data {
   implicit val complObj: Format[CompleteObject] = Json.format[CompleteObject]
   implicit val objLog: Format[ObjectLog] = Json.format[ObjectLog]
   implicit val complObjLog: Format[CompleteObjectLog] = Json.format[CompleteObjectLog]
+  implicit val objComment: Format[ObjectComment] = Json.format[ObjectComment]
+  implicit val complObjComment: Format[CompleteObjectComment] = Json.format[CompleteObjectComment]
 
 
 }

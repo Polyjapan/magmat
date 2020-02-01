@@ -18,6 +18,10 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
   implicit val objectParser: RowParser[SingleObject] = Macro.namedParser[SingleObject]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
   implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
+  implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
+
+  def eventId: Int = events.getCurrentEventIdSync()
+
 
   private val completeObjectParser: RowParser[CompleteObject] = {
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
@@ -101,13 +105,24 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   })
 
   def getLogs(id: Int): Future[List[ObjectLog]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM object_logs WHERE object_id = {id} ORDER BY timestamp DESC")
-      .on("id" -> id)
+    SQL("SELECT * FROM object_logs WHERE object_id = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
+      .on("id" -> id, "eventId" -> eventId)
       .as(objectLogParser.*)
   })
 
+  def getComments(id: Int): Future[List[ObjectComment]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM objects_comments WHERE object_id = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
+      .on("id" -> id, "eventId" -> eventId)
+      .as(objectCommentParser.*)
+  })
+
+  def addComment(objectId: Int, userId: Int, message: String) = Future(db.withConnection { implicit c =>
+    SQL("INSERT INTO objects_comments(object_id, event_id, timestamp, writer, comment) VALUES ({id}, {ev}, NOW(), {user}, {message})")
+      .on("id" -> objectId, "ev" -> eventId, "user" -> userId, "message" -> message)
+      .executeInsert()
+  })
+
   def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value, signature: Option[String]): Future[Boolean] = Future({
-    val eventId = events.getCurrentEventIdSync()
 
     db.withConnection { implicit connection =>
       SQL(

@@ -6,7 +6,7 @@ import java.time.Clock
 import java.util.Base64
 
 import ch.japanimpact.auth.api.AuthApi
-import data.{CompleteObject, CompleteObjectLog, LoanStatus, ObjectStatus, SingleObject, StorageLocation}
+import data.{CompleteObject, CompleteObjectComment, CompleteObjectLog, LoanStatus, ObjectStatus, SingleObject, StorageLocation}
 import javax.imageio.ImageIO
 import javax.inject.Inject
 import models.ObjectsModel
@@ -102,6 +102,22 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
         }
       })
   }.requiresAuthentication
+
+  def getComments(id: Int) = Action.async { req =>
+    model.getComments(id)
+      .flatMap(r => {
+        val ids: Set[Int] = r.map(_.writer).toSet
+        auth.getUserProfiles(ids).map {
+          case Left(map) => Ok(Json.toJson(r.map(com => CompleteObjectComment(com, map(com.writer)))))
+          case Right(_) => InternalServerError
+        }
+      })
+  }.requiresAuthentication
+
+  def postComment(id: Int): Action[String] = Action.async(parse.text(5000)) { req =>
+    if (req.body.nonEmpty) model.addComment(id, req.user.userId, req.body).map(_ => Ok)
+    else Future(BadRequest)
+  }
 
   def changeState(id: Int) = Action.async(parse.json) { req =>
     val targetState = (req.body \ "targetState").as[ObjectStatus.Value]
