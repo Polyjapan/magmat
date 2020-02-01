@@ -1,21 +1,17 @@
 package controllers
 
-import java.awt.Image
-import java.io.{ByteArrayInputStream, ByteArrayOutputStream}
 import java.time.Clock
-import java.util.Base64
 
 import ch.japanimpact.auth.api.AuthApi
-import data.{CompleteObject, CompleteObjectComment, CompleteObjectLog, LoanStatus, ObjectStatus, SingleObject, StorageLocation}
-import javax.imageio.ImageIO
+import data.{CompleteObjectComment, CompleteObjectLog, ObjectStatus, SingleObject}
 import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
-import play.api.libs.json.{JsObject, Json}
-import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import play.api.libs.json.Json
+import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import utils.AuthenticationPostfix._
+import utils.TidyingAlgo
 
-import scala.collection.MapView
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
@@ -26,46 +22,9 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def computeTidying = Action.async { req =>
+  def computeTidying(inverted: Option[Boolean]) = Action.async { req =>
     model.getAllComplete.map(r => {
-      def dropUselessValues(lst: List[CompleteObject]) =
-       lst.map(_.copy(storageLocationObject = None, inconvStorageLocationObject = None, partOfLoanObject = None))
-
-      def groupLevelTwo(objects: List[CompleteObject]) = {
-        val (stored, unstored) = objects.partition(obj => obj.storageLocationObject.isDefined)
-        val (loaned, unloaned) = unstored.partition(obj => obj.partOfLoanObject.isDefined)
-
-        val groupedStored = groupLocation[List[CompleteObject]](stored, o => o.storageLocationObject.get, dropUselessValues)
-        val groupedLoaned = loaned.groupBy(_.partOfLoanObject.get).map { case (k, v) => Json.obj("loan" -> k, "objects" -> dropUselessValues(v)) }
-
-        Json.obj(
-          "stored" -> groupedStored,
-          "loaned" -> groupedLoaned,
-          "other" -> unloaned
-        )
-      }
-
-      def groupLocation[T](objects: List[CompleteObject], extract: CompleteObject => StorageLocation, transform: List[CompleteObject] => T): MapView[String, MapView[String, MapView[String, T]]] = {
-        objects.groupBy(o => extract(o).room)
-          .view.mapValues(v => v.groupBy(o => extract(o).space.getOrElse("Non Renseigné"))
-          .view.mapValues(v => v.groupBy(o => extract(o).location.getOrElse("Non Renseigné")).view
-          .mapValues(transform)
-        )
-        )
-      }
-
-      val objects =
-      // Only the objects that are not in a loan or are in a non returned loan
-        r.filterNot(elem => elem.partOfLoanObject.exists(_.externalLoan.status != LoanStatus.AwaitingReturn))
-
-      val (stored, unstored) = objects.partition(obj => obj.inconvStorageLocationObject.isDefined)
-
-      val storedLocation = groupLocation[JsObject](stored, o => o.inconvStorageLocationObject.get, groupLevelTwo)
-
-
-      val json = Json.obj("stored" -> storedLocation, "unstored" -> groupLevelTwo(unstored))
-
-      Ok(json)
+      Ok(if (inverted.getOrElse(false)) TidyingAlgo.computeReversed(r) else TidyingAlgo.compute(r))
     })
   }.requiresAuthentication
 

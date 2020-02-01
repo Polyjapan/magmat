@@ -64,7 +64,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
       |LEFT JOIN external_lenders e on el.external_lender_id = e.external_lender_id
       |""".stripMargin
 
-  val BeforeLen = 3 + 10 // 10 columns in objects + the 3 magical ones we add
+  val BeforeLen = 3 + 12 // 12 columns in objects + the 3 magical ones we add
 
   def getAll: Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects").as(objectParser.*)

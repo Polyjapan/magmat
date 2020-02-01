@@ -39,7 +39,7 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
     }
   }
 
-  private val completeObjectTypeAliaser = ObjectTypesModel.storageAliaser(6)
+  private val completeObjectTypeAliaser = ObjectTypesModel.storageAliaser(7)
 
   def getAll: Future[List[ObjectType]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM object_types").as(objectTypeParser.*)
@@ -89,6 +89,8 @@ object ObjectTypesModel {
     val sl1 = ColumnAliaser.withPattern(inconv.toSet, "inconv_")
     val sl2 = ColumnAliaser.withPattern(offconv.toSet, "offconv_")
 
-    (column: (Int, ColumnName)) => sl1.apply(column).orElse(sl2.apply(column))
+    (column: (Int, ColumnName)) => {
+      sl1.apply(column).orElse(sl2.apply(column))
+    }
   }
 }

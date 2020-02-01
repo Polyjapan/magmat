@@ -18,7 +18,7 @@ GET         /objects/types/complete/:id               controllers.ObjectTypesCon
 
 
 GET         /objects/                                 controllers.ObjectsController.getAll
-GET         /objects/tidying                          controllers.ObjectsController.computeTidying
+GET         /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean])
 GET         /objects/complete                         controllers.ObjectsController.getAllComplete
 GET         /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String)
 GET         /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int)
