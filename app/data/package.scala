@@ -36,7 +36,7 @@ package object data {
 
   case class SingleObject(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
                           storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
-                          reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value)
+                          reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None, depositPlace: Option[String] = None)
 
   case class CompleteObject(`object`: SingleObject, objectType: ObjectType,
                             storageLocationObject: Option[StorageLocation],
