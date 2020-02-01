@@ -153,4 +153,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     }
   }.requiresAuthentication
 
+  def getLoanedTo(id: Int) = Action.async { rq =>
+    model.getObjectsLoanedTo(id).map(lst => Ok(Json.toJson(lst)))
+  }.requiresAuthentication
 }

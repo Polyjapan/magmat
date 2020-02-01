@@ -1,12 +1,10 @@
 package models
 
 import anorm.Macro.ColumnNaming
-import anorm.SqlParser.scalar
 import anorm._
 import ch.japanimpact.auth.api.AuthApi
 import data._
 import javax.inject.{Inject, Singleton}
-import utils.AliaserImplicits._
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -81,10 +79,10 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   def getAllByLocation(locId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL(
       """SELECT objects.* FROM objects JOIN object_types ot on objects.object_type_id = ot.object_type_id
-         | WHERE objects.inconv_storage_location = {loc}
-         | OR objects.storage_location = {loc}
-         | OR ot.inconv_storage_location = {loc}
-         | OR ot.storage_location = {loc}
+        | WHERE objects.inconv_storage_location = {loc}
+        | OR objects.storage_location = {loc}
+        | OR ot.inconv_storage_location = {loc}
+        | OR ot.storage_location = {loc}
       """.stripMargin).on("loc" -> locId).as(objectParser.*)
   })
 
@@ -138,7 +136,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
           "signature" -> signature
         )
         .executeUpdate() == 1 && SQL("UPDATE objects SET status = {status} WHERE object_id = {id}")
-          .on("id" -> objectId, "status" -> targetState).executeUpdate() == 1
+        .on("id" -> objectId, "status" -> targetState).executeUpdate() == 1
     }
   })
 
@@ -155,7 +153,6 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
     SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
-
 
 
   def updateOne(id: Int, body: SingleObject) = Future(db.withConnection { implicit conn =>
@@ -175,6 +172,14 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
     BatchSql(
       s"INSERT INTO objects($colNames) VALUES($placeholders)",
       params1.head,
-      params1.tail:_*).execute()
+      params1.tail: _*).execute()
   })
+
+  def getObjectsLoanedTo(user: Int) = Future(db.withConnection { implicit c =>
+    SQL("SELECT T.object_id FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND user = {user}")
+      .on("user" -> user)
+      .as(SqlParser.scalar[Int].*)
+  }).map(objects => objects.map(getOneComplete))
+    .flatMap(objects => Future.foldLeft(objects)(List.empty[CompleteObject])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
+
 }
