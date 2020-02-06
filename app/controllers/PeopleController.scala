@@ -23,4 +23,8 @@ class PeopleController @Inject()(cc: ControllerComponents, service: PeopleServic
     }
   }.requiresAuthentication
 
+  def searchPersons(identifier: String): Action[AnyContent] = Action.async { implicit rq =>
+    service.searchUsers(identifier).map { lst => Ok(Json.toJson(lst)) }
+  }.requiresAuthentication
+
 }

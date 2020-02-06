@@ -68,4 +68,7 @@ class PeopleService @Inject()(val ws: WSClient, api: AuthApi)(implicit ec: Execu
     })
   }
 
+  def searchUsers(data: String): Future[Seq[UserProfile]] = api.searchUser(data)
+
+
 }
