@@ -22,6 +22,7 @@ GET           /objects/                                 controllers.ObjectsContr
 GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean])
 GET           /objects/complete                         controllers.ObjectsController.getAllComplete
 GET           /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String)
+GET           /objects/nextSuffix/:tpe                  controllers.ObjectsController.getNextSuffix(tpe: Int, prefix: Option[String])
 GET           /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int)
 GET           /objects/by-location/:loc                 controllers.ObjectsController.getByLocation(loc: Int)
 +nocsrf

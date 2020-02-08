@@ -38,6 +38,26 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
   }.requiresAuthentication
 
+  def getNextSuffix(typeId: Int, prefix: Option[String]) = Action.async { req =>
+    model.getAllByType(typeId).map(objects => {
+      val lcPrefix = prefix.getOrElse("").toLowerCase()
+      val lcPrefixLen = lcPrefix.length
+
+      println(lcPrefix)
+      println(lcPrefixLen)
+
+      val filteredNums = objects
+        .map(obj => obj.suffix.toLowerCase())
+        .filter(_.startsWith(lcPrefix))
+        .map(_.drop(lcPrefixLen))
+        .map(_.trim)
+        .filter(_.forall(_.isDigit))
+        .map(_.toInt)
+
+      if (filteredNums.isEmpty) 1 else filteredNums.max + 1
+    }).map(n => Ok(Json.toJson(n)))
+  }.requiresAuthentication
+
   def getAllComplete = Action.async { req =>
     model.getAllComplete.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
