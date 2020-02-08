@@ -9,14 +9,14 @@ object TidyingAlgo {
   def compute(r: List[CompleteObject]) = {
     doCompute(r,
       _.inconvStorageLocationObject.map(Left(_)),
-      o => o.storageLocationObject.map(Left(_)).orElse(o.partOfLoanObject.map(Right(_)))
+      o => o.partOfLoanObject.map(Right(_)).orElse(o.storageLocationObject.map(Left(_)))
     )
   }
 
   def computeReversed(r: List[CompleteObject]) = {
     doCompute(r,
 
-      o => o.storageLocationObject.map(Left(_)).orElse(o.partOfLoanObject.map(Right(_))),
+      o => o.partOfLoanObject.map(Right(_)).orElse(o.storageLocationObject.map(Left(_))),
       _.inconvStorageLocationObject.map(Left(_))
     )
   }
