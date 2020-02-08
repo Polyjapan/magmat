@@ -35,6 +35,18 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
       .executeInsert(scalar[Int].singleOpt)
   })
 
+  def update(id: Int, body: StorageLocation): Future[Int] = Future(db.withConnection { implicit conn =>
+    SQL("UPDATE storage_location SET in_conv = {inConv}, room = {room}, space = {space}, location = {location} WHERE storage_location_id = {storageLocationId}")
+      .bind(body.copy(storageLocationId = Some(id)))
+      .executeUpdate()
+  })
+
+  def delete(id: Int): Future[Boolean] = Future(db.withConnection { implicit conn =>
+    SQL("DELETE FROM storage_location WHERE storage_location_id = {id}")
+      .on("id" -> id)
+      .execute()
+  })
+
   def moveItems(items: List[String], targetStorage: StorageLocation) = Future(db.withConnection { implicit conn =>
     val field = if (targetStorage.inConv) "inconv_storage_location" else "storage_location"
 

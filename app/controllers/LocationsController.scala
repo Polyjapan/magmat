@@ -33,6 +33,14 @@ class LocationsController @Inject()(cc: ControllerComponents, storage: StorageMo
     storage.create(req.body).map(opt => Ok(Json.toJson(opt)))
   }.requiresAuthentication
 
+  def update(id: Int): Action[StorageLocation] = Action.async(parse.json[StorageLocation]) { req =>
+    storage.update(id, req.body).map(opt => Ok(Json.toJson(opt > 0)))
+  }.requiresAuthentication
+
+  def delete(id: Int): Action[AnyContent] = Action.async { req =>
+    storage.delete(id).map(opt => Ok(Json.toJson(opt)))
+  }.requiresAuthentication
+
   def moveItems(targetStorage: Int) = Action.async(parse.json(8000)) { req =>
     val items = (req.body \ "items").as[List[String]].map(_.trim).filter(_.nonEmpty)
     val moveType = (req.body \ "moveType").as[Boolean]
