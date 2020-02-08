@@ -43,18 +43,18 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       val lcPrefix = prefix.getOrElse("").toLowerCase()
       val lcPrefixLen = lcPrefix.length
 
-      println(lcPrefix)
-      println(lcPrefixLen)
+      if (lcPrefixLen == 0) 1
+      else {
+        val filteredNums = objects
+          .map(obj => obj.suffix.toLowerCase())
+          .filter(_.startsWith(lcPrefix))
+          .map(_.drop(lcPrefixLen))
+          .map(_.trim)
+          .filter(_.forall(_.isDigit))
+          .map(_.toInt)
 
-      val filteredNums = objects
-        .map(obj => obj.suffix.toLowerCase())
-        .filter(_.startsWith(lcPrefix))
-        .map(_.drop(lcPrefixLen))
-        .map(_.trim)
-        .filter(_.forall(_.isDigit))
-        .map(_.toInt)
-
-      if (filteredNums.isEmpty) 1 else filteredNums.max + 1
+        if (filteredNums.isEmpty) 1 else filteredNums.max + 1
+      }
     }).map(n => Ok(Json.toJson(n)))
   }.requiresAuthentication
 
