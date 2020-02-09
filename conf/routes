@@ -34,6 +34,7 @@ GET           /objects/:id                              controllers.ObjectsContr
 +nocsrf
 PUT           /objects/:id                              controllers.ObjectsController.updateOne(id: Int)
 GET           /objects/loanedTo/:user                   controllers.ObjectsController.getLoanedTo(user: Int)
+GET           /objects/history/:user                    controllers.ObjectsController.getUserHistory(user: Int)
 GET           /objects/logs/:id                         controllers.ObjectsController.getLogs(id: Int)
 GET           /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int)
 +nocsrf

@@ -3,7 +3,7 @@ package controllers
 import java.time.Clock
 
 import ch.japanimpact.auth.api.AuthApi
-import data.{CompleteObjectComment, CompleteObjectLog, ObjectStatus, SingleObject}
+import data.{CompleteObjectComment, ObjectLogWithUser, ObjectStatus, SingleObject}
 import javax.inject.Inject
 import models.ObjectsModel
 import play.api.Configuration
@@ -76,7 +76,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
         val ids: Set[Int] = r.flatMap(obj => Set(obj.changedBy, obj.user)).toSet
         auth.getUserProfiles(ids).map {
           case Left(map) =>
-            Ok(Json.toJson(r.map(log => CompleteObjectLog(log, map(log.changedBy), map(log.user)))))
+            Ok(Json.toJson(r.map(log => ObjectLogWithUser(log, map(log.changedBy), map(log.user)))))
           case Right(_) => InternalServerError
         }
       })
@@ -177,5 +177,9 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
   def getLoanedTo(id: Int) = Action.async { rq =>
     model.getObjectsLoanedTo(id).map(lst => Ok(Json.toJson(lst)))
+  }.requiresAuthentication
+
+  def getUserHistory(id: Int) = Action.async { rq =>
+    model.getUserHistory(id).map(lst => Ok(Json.toJson(lst)))
   }.requiresAuthentication
 }

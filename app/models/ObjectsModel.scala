@@ -181,4 +181,11 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   }).map(objects => objects.map(getOneComplete))
     .flatMap(objects => Future.foldLeft(objects)(List.empty[CompleteObject])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
 
+  def getUserHistory(id: Int): Future[List[ObjectLogWithObject]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM object_logs JOIN objects o on object_logs.object_id = o.object_id JOIN object_types ot on o.object_type_id = ot.object_type_id WHERE user = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
+      .on("id" -> id, "eventId" -> eventId)
+      .as(((objectLogParser ~ objectParser ~ objectTypeParser)
+        .map { case log ~ o ~ ot => ObjectLogWithObject(log, o, ot) }).*)
+  })
+
 }

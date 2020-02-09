@@ -1,6 +1,7 @@
 import java.sql.PreparedStatement
 
-import anorm.{Column, ToStatement}
+import anorm.Macro.ColumnNaming
+import anorm.{Column, Macro, RowParser, ToStatement}
 import ch.japanimpact.auth.api.UserProfile
 import org.joda.time.DateTime
 import play.api.libs.json._
@@ -32,7 +33,9 @@ package object data {
   case class ObjectLog(objectId: Int, eventId: Int, timestamp: DateTime, changedBy: Int, user: Int,
                        sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value, signature: Option[String])
 
-  case class CompleteObjectLog(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
+  case class ObjectLogWithUser(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
+
+  case class ObjectLogWithObject(objectLog: ObjectLog, `object`: SingleObject, objectType: ObjectType)
 
   case class ObjectComment(objectId: Int, eventId: Int, timestamp: DateTime, writer: Int, comment: String)
 
@@ -113,9 +116,11 @@ package object data {
   implicit val obj: Format[SingleObject] = Json.format[SingleObject]
   implicit val complObj: Format[CompleteObject] = Json.format[CompleteObject]
   implicit val objLog: Format[ObjectLog] = Json.format[ObjectLog]
-  implicit val complObjLog: Format[CompleteObjectLog] = Json.format[CompleteObjectLog]
+  implicit val complObjLog: Format[ObjectLogWithUser] = Json.format[ObjectLogWithUser]
+  implicit val complObjLogWithObj: Format[ObjectLogWithObject] = Json.format[ObjectLogWithObject]
   implicit val objComment: Format[ObjectComment] = Json.format[ObjectComment]
   implicit val complObjComment: Format[CompleteObjectComment] = Json.format[CompleteObjectComment]
 
+  implicit val objectTypeParser: RowParser[ObjectType] = Macro.namedParser[ObjectType](ColumnNaming.SnakeCase)
 
 }

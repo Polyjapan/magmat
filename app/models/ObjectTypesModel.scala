@@ -15,7 +15,6 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: Executio
 
   implicit val parameterList: ToParameterList[ObjectType] = Macro.toParameters[ObjectType]()
 
-  implicit val objectTypeParser: RowParser[ObjectType] = Macro.namedParser[ObjectType](ColumnNaming.SnakeCase)
 
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
   private val completeObjectRequest: String =
