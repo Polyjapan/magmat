@@ -179,6 +179,19 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getObjectsLoanedTo(id).map(lst => Ok(Json.toJson(lst)))
   }.requiresAuthentication
 
+  def getLoaned = Action.async { rq =>
+    model.getObjectsLoaned.flatMap(objs => {
+      auth.getUserProfiles(objs.map(_._2).toSet)
+        .map {
+          case Left(users) =>
+            Ok(Json.toJson(
+              objs.map { case (obj, uid) => Json.obj("object" -> obj, "user" -> users(uid)) }
+            ))
+          case _ => InternalServerError
+        }
+    })
+  }.requiresAuthentication
+
   def getUserHistory(id: Int) = Action.async { rq =>
     model.getUserHistory(id).map(lst => Ok(Json.toJson(lst)))
   }.requiresAuthentication

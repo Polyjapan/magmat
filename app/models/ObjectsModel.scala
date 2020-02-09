@@ -181,6 +181,13 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   }).map(objects => objects.map(getOneComplete))
     .flatMap(objects => Future.foldLeft(objects)(List.empty[CompleteObject])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
 
+  def getObjectsLoaned = Future(db.withConnection { implicit c =>
+    SQL("SELECT T.object_id, user FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND target_state != 'DELETED'")
+      .as((SqlParser.int("object_id") ~ SqlParser.int("user")).*)
+  })
+    .map(objects => objects.map { case id ~ user => getOneComplete(id).map(obj => obj.map(o => (o, user))) })
+    .flatMap(objects => Future.foldLeft(objects)(List.empty[(CompleteObject, Int)])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
+
   def getUserHistory(id: Int): Future[List[ObjectLogWithObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM object_logs JOIN objects o on object_logs.object_id = o.object_id JOIN object_types ot on o.object_type_id = ot.object_type_id WHERE user = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
       .on("id" -> id, "eventId" -> eventId)
