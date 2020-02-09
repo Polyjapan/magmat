@@ -65,37 +65,37 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   val BeforeLen = 3 + 12 // 12 columns in objects + the 3 magical ones we add
 
   def getAll: Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM objects").as(objectParser.*)
+    SQL("SELECT * FROM objects WHERE status != 'DELETED'").as(objectParser.*)
   })
 
   def getAllComplete: Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest + " WHERE objects.status != 'DELETED'").asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByType(typeId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM objects WHERE object_type_id = {id}").on("id" -> typeId).as(objectParser.*)
+    SQL("SELECT * FROM objects WHERE object_type_id = {id} AND status != 'DELETED'").on("id" -> typeId).as(objectParser.*)
   })
 
   def getAllByLocation(locId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL(
       """SELECT objects.* FROM objects JOIN object_types ot on objects.object_type_id = ot.object_type_id
-        | WHERE objects.inconv_storage_location = {loc}
+        | WHERE (objects.inconv_storage_location = {loc}
         | OR objects.storage_location = {loc}
         | OR ot.inconv_storage_location = {loc}
-        | OR ot.storage_location = {loc}
+        | OR ot.storage_location = {loc}) AND status != 'DELETED'
       """.stripMargin).on("loc" -> locId).as(objectParser.*)
   })
 
   def getAllByLocationComplete(locId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest + " WHERE (objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}) AND status != 'DELETED'").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByLoanComplete(loanId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE objects.actual_part_of_loan = {loan}").on("loan" -> loanId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest + " WHERE objects.actual_part_of_loan = {loan} AND objects.status != 'DELETED'").on("loan" -> loanId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByTypeComplete(typeId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE objects.object_type_id = {id}").on("id" -> typeId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest + " WHERE objects.object_type_id = {id} AND objects.status != 'DELETED'").on("id" -> typeId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getOne(id: Int): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
@@ -121,7 +121,6 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   })
 
   def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value, signature: Option[String]): Future[Boolean] = Future({
-
     db.withConnection { implicit connection =>
       SQL(
         """INSERT INTO object_logs(object_id, event_id, timestamp, changed_by, user, source_state, target_state, signature)
@@ -135,7 +134,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
           "targetState" -> targetState,
           "signature" -> signature
         )
-        .executeUpdate() == 1 && SQL("UPDATE objects SET status = {status} WHERE object_id = {id}")
+        .executeUpdate() == 1 && SQL("UPDATE objects SET status = {status} WHERE object_id = {id} AND status != 'DELETED'")
         .on("id" -> objectId, "status" -> targetState).executeUpdate() == 1
     }
   })
@@ -176,7 +175,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   })
 
   def getObjectsLoanedTo(user: Int) = Future(db.withConnection { implicit c =>
-    SQL("SELECT T.object_id FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND user = {user}")
+    SQL("SELECT T.object_id FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND user = {user} AND target_state != 'DELETED'")
       .on("user" -> user)
       .as(SqlParser.scalar[Int].*)
   }).map(objects => objects.map(getOneComplete))

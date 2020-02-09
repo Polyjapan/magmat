@@ -20,7 +20,7 @@ package object data {
 
   object ObjectStatus extends Enumeration {
     type ObjectStatus = Value
-    val InStock, Out, Lost, Resting = Value
+    val InStock, Out, Lost, Resting, Deleted = Value
   }
 
   object LoanStatus extends Enumeration {
@@ -88,6 +88,7 @@ package object data {
       case "OUT" => ObjectStatus.Out
       case "LOST" => ObjectStatus.Lost
       case "RESTING" => ObjectStatus.Resting
+      case "DELETED" => ObjectStatus.Deleted
 
     }
 
@@ -97,6 +98,7 @@ package object data {
       case ObjectStatus.Out => "OUT"
       case ObjectStatus.Lost => "LOST"
       case ObjectStatus.Resting => "RESTING"
+      case ObjectStatus.Deleted => "DELETED"
     })
 
   implicit val datetimeRead: Reads[DateTime] = JodaReads.DefaultJodaDateTimeReads
