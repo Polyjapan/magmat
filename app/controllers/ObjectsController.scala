@@ -93,8 +93,10 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       })
   }.requiresAuthentication
 
-  def postComment(id: Int): Action[String] = Action.async(parse.text(5000)) { req =>
-    if (req.body.nonEmpty) model.addComment(id, req.user.userId, req.body).map(_ => Ok)
+  def postComment(id: Int): Action[String] = Action.async(parse.tolerantText(5000)) { req =>
+    if (req.body.nonEmpty) {
+      model.addComment(id, req.user.userId, req.body).map(_ => Ok)
+    }
     else Future(BadRequest)
   }
 
@@ -106,7 +108,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
     model.getOneComplete(id).flatMap {
       case Some(co) =>
-        val requiresSignature = if (co.objectType.requiresSignature) co.`object`.status == ObjectStatus.InStock && targetState == ObjectStatus.Out else false
+        val requiresSignature = if (co.objectType.requiresSignature) (co.`object`.status == ObjectStatus.InStock || co.`object`.status == ObjectStatus.Out) && targetState == ObjectStatus.Out else false
 
         if (requiresSignature && signature.isEmpty) {
           Future(BadRequest)
