@@ -44,4 +44,8 @@ class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTyp
     model.update(id, req.body.copy(None)).map(updated => Ok(Json.toJson(updated > 0)))
   }.requiresAuthentication
 
+  def deleteObjectType(id: Int) = Action.async { req =>
+    model.delete(id, req.user.userId).map(_ => Ok)
+  }.requiresAuthentication
+
 }

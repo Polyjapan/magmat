@@ -63,6 +63,8 @@ GET           /external-loans/complete/:id              controllers.LoansControl
 POST          /objects/types                            controllers.ObjectTypesController.createObjectType
 +nocsrf
 PUT           /objects/types/:id                        controllers.ObjectTypesController.updateObjectType(id: Int)
++nocsrf
+DELETE        /objects/types/:id                        controllers.ObjectTypesController.deleteObjectType(id: Int)
 
 GET           /locations                                controllers.LocationsController.getAll
 GET           /locations/filtered/:inConv               controllers.LocationsController.getAllByInConv(inConv: Boolean)
