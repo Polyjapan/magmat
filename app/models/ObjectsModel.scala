@@ -155,7 +155,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
 
 
   def updateOne(id: Int, body: SingleObject) = Future(db.withConnection { implicit conn =>
-    val colNames = List("suffix", "description", "storageLocation", "inconvStorageLocation", "partOfLoan", "reservedFor", "assetTag", "plannedUse", "depositPlace").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
+    val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "inconvStorageLocation", "partOfLoan", "reservedFor", "assetTag", "plannedUse", "depositPlace").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
 
     SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(body.copy(objectId = Some(id))).executeUpdate()
   })

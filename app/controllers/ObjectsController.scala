@@ -93,7 +93,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       })
   }.requiresAuthentication
 
-  def postComment(id: Int): Action[String] = Action.async(parse.tolerantText(5000)) { req =>
+  def postComment(id: Int): Action[String] = Action.async(parse.text(5000)) { req =>
     if (req.body.nonEmpty) {
       model.addComment(id, req.user.userId, req.body).map(_ => Ok)
     }
