@@ -87,7 +87,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
   })
 
   def getAllByLocationComplete(locId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE (objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}) AND status != 'DELETED'").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest + " WHERE (objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}) AND objects.status != 'DELETED'").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByLoanComplete(loanId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
