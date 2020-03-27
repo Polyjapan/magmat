@@ -6,7 +6,7 @@ import javax.inject.Inject
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import utils.AuthenticationPostfix._
+import utils.AuthHelper._
 import utils.PeopleService
 
 import scala.concurrent.ExecutionContext
@@ -14,7 +14,7 @@ import scala.concurrent.ExecutionContext
 /**
  * @author Louis Vialar
  */
-class PeopleController @Inject()(cc: ControllerComponents, service: PeopleService)(implicit ec: ExecutionContext, clock: Clock, conf: Configuration) extends AbstractController(cc) {
+class PeopleController @Inject()(cc: ControllerComponents, service: PeopleService)(implicit ec: ExecutionContext, clock: Clock, conf: Configuration, authorize: AuthorizeActionBuilder) extends AbstractController(cc) {
 
   def getPerson(identifier: String): Action[AnyContent] = Action.async { implicit rq =>
     service.getUser(identifier).map {

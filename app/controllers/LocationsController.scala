@@ -8,14 +8,14 @@ import models.StorageModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
-import utils.AuthenticationPostfix._
+import utils.AuthHelper._
 
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author Louis Vialar
  */
-class LocationsController @Inject()(cc: ControllerComponents, storage: StorageModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class LocationsController @Inject()(cc: ControllerComponents, storage: StorageModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock, authorize: AuthorizeActionBuilder) extends AbstractController(cc) {
 
   def getAll: Action[AnyContent] = Action.async { implicit rq =>
     storage.getAll.map(lst => Ok(Json.toJson(lst)))
