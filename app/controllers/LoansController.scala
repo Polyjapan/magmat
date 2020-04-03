@@ -2,22 +2,21 @@ package controllers
 
 import java.time.Clock
 
-import ch.japanimpact.auth.api.AuthorizationUtils.UserAction
 import data.{ExternalLoan, LoanStatus}
 import javax.inject.Inject
 import models.LoansModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-import utils.AuthHelper._
+import utils.AuthenticationPostfix._
 
 import scala.concurrent.ExecutionContext
 
 /**
  * @author Louis Vialar
  */
-class LoansController @Inject()(cc: ControllerComponents, model: LoansModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock, authorize: AuthorizeActionBuilder) extends AbstractController(cc) {
-  def getLoans = authorize.async { req =>
+class LoansController @Inject()(cc: ControllerComponents, model: LoansModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+  def getLoans = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 

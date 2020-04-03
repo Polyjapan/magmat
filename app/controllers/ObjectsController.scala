@@ -9,7 +9,7 @@ import models.ObjectsModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
-import utils.AuthHelper._
+import utils.AuthenticationPostfix._
 import utils.TidyingAlgo
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -17,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * @author Louis Vialar
  */
-class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, auth: AuthApi)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock, authorize: AuthorizeActionBuilder) extends AbstractController(cc) {
+class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, auth: AuthApi)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
@@ -93,17 +93,17 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       })
   }.requiresAuthentication
 
-  def postComment(id: Int): Action[String] = authorize(parse.text(5000)).async { req =>
+  def postComment(id: Int): Action[String] = Action.async(parse.text(5000)) { req =>
     if (req.body.nonEmpty) {
-      model.addComment(id, req.user.get.userId, req.body).map(_ => Ok)
+      model.addComment(id, req.user.userId, req.body).map(_ => Ok)
     }
-    else Future.successful(BadRequest)
+    else Future(BadRequest)
   }
 
-  def changeState(id: Int) = authorize(parse.json).async { req =>
+  def changeState(id: Int) = Action.async(parse.json) { req =>
     val targetState = (req.body \ "targetState").as[ObjectStatus.Value]
     val userId = (req.body \ "userId").as[Int]
-    val adminId = req.user.get.userId
+    val adminId = req.user.userId
     val signature = (req.body \ "signature").asOpt[String]
 
     model.getOneComplete(id).flatMap {

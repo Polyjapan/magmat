@@ -8,14 +8,14 @@ import models.ObjectTypesModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, ControllerComponents}
-import utils.AuthHelper._
+import utils.AuthenticationPostfix._
 
 import scala.concurrent.ExecutionContext
 
 /**
  * @author Louis Vialar
  */
-class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTypesModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock, authorize: AuthorizeActionBuilder) extends AbstractController(cc) {
+class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTypesModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getObjectTypes = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
@@ -44,8 +44,8 @@ class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTyp
     model.update(id, req.body.copy(None)).map(updated => Ok(Json.toJson(updated > 0)))
   }.requiresAuthentication
 
-  def deleteObjectType(id: Int) = authorize.async { req =>
-    model.delete(id, req.user.get.userId).map(_ => Ok)
-  }
+  def deleteObjectType(id: Int) = Action.async { req =>
+    model.delete(id, req.user.userId).map(_ => Ok)
+  }.requiresAuthentication
 
 }

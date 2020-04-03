@@ -4,6 +4,8 @@
 # ~~~~
 
 # An example controller showing a sample home page
+GET           /login/:ticket                            controllers.LoginController.login(ticket: String)
+
 GET           /people/:id                               controllers.PeopleController.getPerson(id: String)
 GET           /people/search/:query                     controllers.PeopleController.searchPersons(query: String)
 
