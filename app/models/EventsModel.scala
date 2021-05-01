@@ -1,27 +1,42 @@
 package models
 
-import anorm.Macro.ColumnNaming
-import anorm._
-import anorm.SqlParser._
-import data._
-import javax.inject.{Inject, Singleton}
+import ch.japanimpact.api.events.EventsService
+import ch.japanimpact.api.events.events.{SimpleEvent, Visibility}
+import play.api.Logger
+import play.api.cache.SyncCacheApi
 
-import scala.concurrent.{ExecutionContext, Future}
+import javax.inject.{Inject, Singleton}
+import scala.concurrent.duration._
+import scala.concurrent.{Await, ExecutionContext, Future}
 
 @Singleton
-class EventsModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionContext) {
-  private val db = dbApi database "default"
+class EventsModel @Inject()(cache: SyncCacheApi, service: EventsService)(implicit ec: ExecutionContext) {
+  def getCurrentEventIdSync: Int = Await.result(getCurrentEventIdAsync, 30.seconds)
 
-  implicit val parameterList: ToParameterList[Event] = Macro.toParameters[Event]()
-  implicit val eventParser: RowParser[Event] = Macro.namedParser[Event]((p: String) => ColumnNaming.SnakeCase(p))
+  def getCurrentEventIdAsync: Future[Int] = getCurrentEvent.map(_.id.get)
 
-  def getCurrentEventIdSync() = db.withConnection { implicit conn =>
-    SQL("SELECT event_id FROM events ORDER BY event_id DESC LIMIT 1").as(int("event_id").single)
+  def getCurrentEvent: Future[SimpleEvent] =
+    cache.getOrElseUpdate("current_event", 30.minutes) {
+      service.getCurrentEvent().map {
+        case Left(err) =>
+          Logger("EventsModel").error("API Error while getting current event: " + err.error + " ; " + err.errorMessage)
+          throw new Exception("API Error " + err.error)
+        case Right(event) => event.event
+      }
+    }
+
+  def getEvent(eventId: Int): Future[SimpleEvent] = service.getEvent(eventId).map {
+    case Left(err) =>
+      Logger("EventsModel").error("API Error while getting event " + eventId + ": " + err.error + " ; " + err.errorMessage)
+      throw new Exception("API Error " + err.error)
+    case Right(ev) => ev.event
   }
 
-  def getCurrentEventIdAsync(): Future[Int] = Future(getCurrentEventIdSync())
-
-  def getCurrentEvent(): Future[Event] = Future(db.withConnection { implicit conn =>
-    SQL("SELECT * FROM events ORDER BY event_id DESC LIMIT 1").as(eventParser.single)
-  })
+  def getEvents: Future[List[SimpleEvent]] = service.getEvents().map {
+    case Left(err) =>
+      Logger("EventsModel").error("API Error while getting list of events: " + err.error + " ; " + err.errorMessage)
+      throw new Exception("API Error " + err.error)
+    case Right(lst) =>
+      lst.map(_.event).filter(e => e.visibility != Visibility.Draft).toList
+  }
 }

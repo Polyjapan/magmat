@@ -23,13 +23,12 @@ class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionConte
 
   implicit val loanParser: RowParser[ExternalLoan] = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
   implicit val lenderParser: RowParser[ExternalLender] = Macro.namedParser[ExternalLender]((p : String) => "external_lenders." + ColumnNaming.SnakeCase(p))
-  implicit val eventParser: RowParser[Event] = Macro.namedParser[Event]((p : String) => "events." + ColumnNaming.SnakeCase(p))
 
   private val completeRequest: String =
     "SELECT * FROM external_loans el LEFT JOIN external_lenders e on el.external_lender_id = e.external_lender_id"
 
-  private val completeParser: RowParser[CompleteExternalLoan] = loanParser ~ lenderParser ~ eventParser.? map {
-    case loan ~ lender ~ event => CompleteExternalLoan.merge(loan, event, lender)
+  private val completeParser: RowParser[CompleteExternalLoan] = loanParser ~ lenderParser map {
+    case loan ~ lender => CompleteExternalLoan.merge(loan, None, lender)
   }
 
   def getAll: Future[List[ExternalLoan]] = Future(db.withConnection { implicit connection =>

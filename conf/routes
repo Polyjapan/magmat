@@ -9,7 +9,9 @@ GET           /login/:ticket                            controllers.LoginControl
 GET           /people/:id                               controllers.PeopleController.getPerson(id: String)
 GET           /people/search/:query                     controllers.PeopleController.searchPersons(query: String)
 
-GET           /events/current                           controllers.EventsController.getCurrentEvent
+GET           /events/current                           controllers.EventsController.getEvent
+GET           /events                                   controllers.EventsController.getEvents
+GET           /events/switch/:id                        controllers.EventsController.switchEvent(id: Int)
 
 GET           /objects/types/                           controllers.ObjectTypesController.getObjectTypes
 GET           /objects/types/by-loan/:loan              controllers.ObjectTypesController.getObjectTypesByLoan(loan: Int)

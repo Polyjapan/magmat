@@ -5,6 +5,7 @@ import anorm.{Column, Macro, RowParser, ToStatement}
 import ch.japanimpact.auth.api.UserProfile
 import org.joda.time.DateTime
 import play.api.libs.json._
+import ch.japanimpact.api.events.events.Event
 
 package object data {
 
@@ -50,8 +51,6 @@ package object data {
                             inconvStorageLocationObject: Option[StorageLocation],
                             partOfLoanObject: Option[CompleteExternalLoan],
                             reservedFor: Option[UserProfile] = None)
-
-  case class Event(eventId: Int, eventName: String, inConv: Boolean)
 
   case class ExternalLoan(externalLoanId: Option[Int], externalLenderId: Int, eventId: Int, pickupTime: DateTime,
                           returnTime: DateTime, loanDetails: Option[String], pickupPlace: Option[String], returnPlace: Option[String],
@@ -106,7 +105,6 @@ package object data {
 
   implicit val datetimeRead: Reads[DateTime] = JodaReads.DefaultJodaDateTimeReads
   implicit val datetimeWrite: Writes[DateTime] = JodaWrites.JodaDateTimeWrites
-  implicit val event: Format[Event] = Json.format[Event]
   implicit val lender: Format[ExternalLender] = Json.format[ExternalLender]
   implicit val loan: Format[ExternalLoan] = Json.format[ExternalLoan]
   implicit val completeLoan: Format[CompleteExternalLoan] = Json.format[CompleteExternalLoan]

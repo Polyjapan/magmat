@@ -17,7 +17,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
   implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
   implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
 
-  def eventId: Int = events.getCurrentEventIdSync()
+  def eventId: Int = events.getCurrentEventIdSync
 
 
   private val completeObjectParser: RowParser[CompleteObject] = {

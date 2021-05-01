@@ -15,7 +15,7 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
 
   implicit val parameterList: ToParameterList[ObjectType] = Macro.toParameters[ObjectType]()
 
-  def eventId: Int = events.getCurrentEventIdSync()
+  def eventId: Int = events.getCurrentEventIdSync
 
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
   private val completeObjectRequest: String =

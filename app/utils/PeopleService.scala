@@ -1,6 +1,7 @@
 package utils
 
 import ch.japanimpact.auth.api.UserProfile
+import ch.japanimpact.auth.api.apitokens.APITokensService
 import com.google.inject.Inject
 import models.UsersModel
 import play.api.Configuration
@@ -8,25 +9,33 @@ import play.api.libs.ws.WSClient
 
 import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
+import scala.concurrent.duration.DurationInt
 
 
-class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration) {
-  private val apiBase = conf.get[String]("jistaff.baseUrl")
-  private val apiToken = conf.get[String]("jistaff.clientToken")
+class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration, tokens: APITokensService) {
+  private val apiBase = {
+    var url = conf.get[String]("jistaff.baseUrl")
+    while (url.endsWith("/")) url = url.dropRight(1)
+    url
+  }
   private val staffIds: mutable.Map[Int, Int] = mutable.Map()
   private var refreshing: Future[List[List[Int]]] = _
   private var lastUpdate = 0L
 
+  private val token = tokens.holder(Set("staff/list/event/*"), Set("staff"), 48.hours)
+
   private def getStaffs() = {
-    ws.url(apiBase + "/front/staffs")
-      .addHttpHeaders("Authorization" -> apiToken)
-      .get()
-      .map { r =>
-        println(r)
-        if (r.status == 200) {
-          r.json.as[List[List[Int]]]
-        } else List.empty[List[Int]]
-      }
+    token().flatMap { tok =>
+      ws.url(apiBase + "/front/staffs")
+        .addHttpHeaders("Authorization" -> ("Bearer " + tok))
+        .get()
+        .map { r =>
+          println(r)
+          if (r.status == 200) {
+            r.json.as[List[List[Int]]]
+          } else List.empty[List[Int]]
+        }
+    }
   }
 
   private def updateIfNeeded(): Future[Map[Int, Int]] = {
