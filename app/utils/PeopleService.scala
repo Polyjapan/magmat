@@ -1,8 +1,8 @@
 package utils
 
-import ch.japanimpact.auth.api.constants.GeneralErrorCodes
-import ch.japanimpact.auth.api.{AuthApi, UserProfile}
+import ch.japanimpact.auth.api.UserProfile
 import com.google.inject.Inject
+import models.UsersModel
 import play.api.Configuration
 import play.api.libs.ws.WSClient
 
@@ -10,7 +10,7 @@ import scala.collection.mutable
 import scala.concurrent.{ExecutionContext, Future}
 
 
-class PeopleService @Inject()(val ws: WSClient, api: AuthApi)(implicit ec: ExecutionContext, conf: Configuration) {
+class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration) {
   private val apiBase = conf.get[String]("jistaff.baseUrl")
   private val apiToken = conf.get[String]("jistaff.clientToken")
   private val staffIds: mutable.Map[Int, Int] = mutable.Map()
@@ -59,16 +59,16 @@ class PeopleService @Inject()(val ws: WSClient, api: AuthApi)(implicit ec: Execu
     }
   }
 
-  def getUser(data: String): Future[Either[UserProfile, GeneralErrorCodes.ErrorCode]] = {
+  def getUser(data: String): Future[Option[UserProfile]] = {
     updateIfNeeded().flatMap(map => {
       getUserId(data, map) match {
-        case Some(userId) => api.getUserProfile(userId)
-        case None => Future(Right(GeneralErrorCodes.UserNotFound))
+        case Some(userId) => users.getUserWithId(userId).map(_.toOption)
+        case None => Future.successful(None)
       }
     })
   }
 
-  def searchUsers(data: String): Future[Seq[UserProfile]] = api.searchUser(data)
+  def searchUsers(data: String): Future[Seq[UserProfile]] = users.searchUsers(data).map(_.toOption.getOrElse(Seq()))
 
 
 }

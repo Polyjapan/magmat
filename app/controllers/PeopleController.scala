@@ -18,8 +18,8 @@ class PeopleController @Inject()(cc: ControllerComponents, service: PeopleServic
 
   def getPerson(identifier: String): Action[AnyContent] = Action.async { implicit rq =>
     service.getUser(identifier).map {
-      case Left(user) => Ok(Json.toJson(user))
-      case Right(_) => NotFound
+      case Some(user) => Ok(Json.toJson(user))
+      case _ => NotFound
     }
   }.requiresAuthentication
 

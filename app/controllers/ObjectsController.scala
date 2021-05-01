@@ -1,23 +1,22 @@
 package controllers
 
-import java.time.Clock
-
-import ch.japanimpact.auth.api.AuthApi
+import ch.japanimpact.auth.api.UserProfile
 import data.{CompleteObjectComment, ObjectLogWithUser, ObjectStatus, SingleObject}
-import javax.inject.Inject
-import models.ObjectsModel
+import models.{ObjectsModel, UsersModel}
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
 import utils.AuthenticationPostfix._
 import utils.TidyingAlgo
 
+import java.time.Clock
+import javax.inject.Inject
 import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author Louis Vialar
  */
-class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, auth: AuthApi)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
@@ -74,10 +73,10 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getLogs(id)
       .flatMap(r => {
         val ids: Set[Int] = r.flatMap(obj => Set(obj.changedBy, obj.user)).toSet
-        auth.getUserProfiles(ids).map {
-          case Left(map) =>
+        users.getUsersWithIds(ids).map {
+          case Right(map) =>
             Ok(Json.toJson(r.map(log => ObjectLogWithUser(log, map(log.changedBy), map(log.user)))))
-          case Right(_) => InternalServerError
+          case Left(_) => InternalServerError
         }
       })
   }.requiresAuthentication
@@ -86,9 +85,9 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getComments(id)
       .flatMap(r => {
         val ids: Set[Int] = r.map(_.writer).toSet
-        auth.getUserProfiles(ids).map {
-          case Left(map) => Ok(Json.toJson(r.map(com => CompleteObjectComment(com, map(com.writer)))))
-          case Right(_) => InternalServerError
+        users.getUsersWithIds(ids).map {
+          case Right(map) => Ok(Json.toJson(r.map(com => CompleteObjectComment(com, map(com.writer)))))
+          case Left(_) => InternalServerError
         }
       })
   }.requiresAuthentication
@@ -181,9 +180,9 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
   def getLoaned = Action.async { rq =>
     model.getObjectsLoaned.flatMap(objs => {
-      auth.getUserProfiles(objs.map(_._2).toSet)
+      users.getUsersWithIds(objs.map(_._2).toSet)
         .map {
-          case Left(users) =>
+          case Right(users) =>
             Ok(Json.toJson(
               objs.map { case (obj, uid) => Json.obj("object" -> obj, "user" -> users(uid)) }
             ))

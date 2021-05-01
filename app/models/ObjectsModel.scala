@@ -2,14 +2,13 @@ package models
 
 import anorm.Macro.ColumnNaming
 import anorm._
-import ch.japanimpact.auth.api.AuthApi
 import data._
 import javax.inject.{Inject, Singleton}
 
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth: AuthApi)(implicit ec: ExecutionContext) {
+class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, users: UsersModel)(implicit ec: ExecutionContext) {
 
   private val db = dbApi database "default"
 
@@ -40,9 +39,9 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, auth
     if (reservedForSet.isEmpty) {
       Future.successful(objects)
     } else {
-      auth.getUserProfiles(reservedForSet).map {
-        case Left(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.get)))
-        case Right(_) => objects
+      users.getUsersWithIds(reservedForSet).map {
+        case Right(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.unapply)))
+        case Left(_) => objects
       }
     }
   }
