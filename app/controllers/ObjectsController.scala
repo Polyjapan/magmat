@@ -70,7 +70,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
   }.requiresAuthentication
 
   def getLogs(id: Int): Action[AnyContent] = Action.async { req =>
-    model.getLogs(id)
+    model.getLogs(req.eventId, id)
       .flatMap(r => {
         val ids: Set[Int] = r.flatMap(obj => Set(obj.objectLog.changedBy) ++ obj.objectLog.user.toSet).toSet
         users.getUsersWithIds(ids).map {
@@ -84,7 +84,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
   }.requiresAuthentication
 
   def getComments(id: Int) = Action.async { req =>
-    model.getComments(id)
+    model.getComments(req.eventId, id)
       .flatMap(r => {
         val ids: Set[Int] = r.map(_.writer).toSet
         users.getUsersWithIds(ids).map {
@@ -96,7 +96,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
 
   def postComment(id: Int): Action[String] = Action.async(parse.text(5000)) { req =>
     if (req.body.nonEmpty) {
-      model.addComment(id, req.user.userId, req.body).map(_ => Ok)
+      model.addComment(req.eventId, id, req.user.userId, req.body).map(_ => Ok)
     }
     else Future(BadRequest)
   }
@@ -114,7 +114,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
         if (requiresSignature && signature.isEmpty) {
           Future(BadRequest)
         } else {
-          model.changeState(id, userId, adminId, targetState, signature).map(res => {
+          model.changeState(req.eventId, id, userId, adminId, targetState, signature).map(res => {
             if (res) Ok else BadRequest
           })
         }
@@ -194,6 +194,6 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
   }.requiresAuthentication
 
   def getUserHistory(id: Int) = Action.async { rq =>
-    model.getUserHistory(id).map(lst => Ok(Json.toJson(lst)))
+    model.getUserHistory(rq.eventId, id).map(lst => Ok(Json.toJson(lst)))
   }.requiresAuthentication
 }

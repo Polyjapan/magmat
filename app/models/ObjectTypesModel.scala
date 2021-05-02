@@ -15,8 +15,6 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
 
   implicit val parameterList: ToParameterList[ObjectType] = Macro.toParameters[ObjectType]()
 
-  def eventId: Int = events.getCurrentEventIdSync
-
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
   private val completeObjectRequest: String =
     s"""SELECT * FROM object_types ot
@@ -79,7 +77,7 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
       .executeUpdate()
   })
 
-  def delete(id: Int, user: Int): Future[Unit] = Future(db.withConnection { implicit conn =>
+  def delete(eventId: Int, id: Int, user: Int): Future[Unit] = Future(db.withConnection { implicit conn =>
     SQL("UPDATE object_types SET deleted = 1 WHERE object_type_id = {id}")
       .on("id" -> id)
       .execute()

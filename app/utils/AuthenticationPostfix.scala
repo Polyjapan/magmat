@@ -64,7 +64,9 @@ object AuthenticationPostfix {
 
     def user: UserSession = optUser.get
 
-    def eventId: Option[Int] = session.flatMap(_.getAs[Int]("event"))
+    def eventIdOpt: Option[Int] = session.flatMap(_.getAs[Int]("event"))
+
+    def eventId: Int = eventIdOpt.getOrElse(0)
   }
 
 }

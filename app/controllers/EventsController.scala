@@ -18,8 +18,9 @@ class EventsController @Inject()(cc: ControllerComponents, model: EventsModel)(i
 
   def getEvent: Action[AnyContent] = Action.async { implicit rq =>
     (
-      if (rq.eventId.nonEmpty) model.getEvent(rq.eventId.get)
+      if (rq.eventIdOpt.nonEmpty) model.getEvent(rq.eventIdOpt.get)
       else model.getCurrentEvent
+
       ).map(ev => Ok(Json.toJson(ev))).recover {
       case _ => NotFound
     }

@@ -17,9 +17,6 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
   implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
   implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
 
-  def eventId: Int = events.getCurrentEventIdSync
-
-
   private val completeObjectParser: RowParser[CompleteObject] = {
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
     val inconvStorage = Macro.namedParser[StorageLocation]((p: String) => "inconv_" + ColumnNaming.SnakeCase(p))
@@ -101,7 +98,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     SQL("SELECT * FROM objects WHERE object_id = {id}").on("id" -> id).as(objectParser.singleOpt)
   })
 
-  def getLogs(id: Int): Future[List[ObjectLogWithUser]] = Future(db.withConnection { implicit connection =>
+  def getLogs(eventId: Int, id: Int): Future[List[ObjectLogWithUser]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM object_logs WHERE object_id = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
       .on("id" -> id, "eventId" -> eventId)
       .as((objectLogParser ~ guestsParser.?).map {
@@ -109,19 +106,19 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       }.*)
   })
 
-  def getComments(id: Int): Future[List[ObjectComment]] = Future(db.withConnection { implicit connection =>
+  def getComments(eventId: Int, id: Int): Future[List[ObjectComment]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects_comments WHERE object_id = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
       .on("id" -> id, "eventId" -> eventId)
       .as(objectCommentParser.*)
   })
 
-  def addComment(objectId: Int, userId: Int, message: String) = Future(db.withConnection { implicit c =>
+  def addComment(eventId: Int, objectId: Int, userId: Int, message: String) = Future(db.withConnection { implicit c =>
     SQL("INSERT INTO objects_comments(object_id, event_id, timestamp, writer, comment) VALUES ({id}, {ev}, NOW(), {user}, {message})")
       .on("id" -> objectId, "ev" -> eventId, "user" -> userId, "message" -> message)
       .executeInsert()
   })
 
-  def changeState(objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value, signature: Option[String]): Future[Boolean] = Future({
+  def changeState(eventId: Int, objectId: Int, userId: Int, changedBy: Int, targetState: ObjectStatus.Value, signature: Option[String]): Future[Boolean] = Future({
     db.withConnection { implicit connection =>
       SQL(
         """INSERT INTO object_logs(object_id, event_id, timestamp, changed_by, user, source_state, target_state, signature)
@@ -189,7 +186,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     .map(objects => objects.map { case id ~ user => getOneComplete(id).map(obj => obj.map(o => (o, user))) })
     .flatMap(objects => Future.foldLeft(objects)(List.empty[(CompleteObject, Int)])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
 
-  def getUserHistory(id: Int): Future[List[ObjectLogWithObject]] = Future(db.withConnection { implicit connection =>
+  def getUserHistory(eventId: Int, id: Int): Future[List[ObjectLogWithObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM object_logs JOIN objects o on object_logs.object_id = o.object_id JOIN object_types ot on o.object_type_id = ot.object_type_id WHERE user = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
       .on("id" -> id, "eventId" -> eventId)
       .as(((objectLogParser ~ objectParser ~ objectTypeParser)
