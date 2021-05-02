@@ -21,13 +21,12 @@ class LoansModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionConte
   implicit val jodaTimeFix: ToStatement[DateTime] = (s: PreparedStatement, index: Int, v: DateTime) => s.setTimestamp(index, new Timestamp(v.getMillis))
   implicit val parameterList: ToParameterList[ExternalLoan] = Macro.toParameters[ExternalLoan]()
 
-  implicit val loanParser: RowParser[ExternalLoan] = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
-  implicit val lenderParser: RowParser[Guest] = Macro.namedParser[Guest]((p : String) => "guests." + ColumnNaming.SnakeCase(p))
+  implicit val loanParser: RowParser[ExternalLoan] = Macro.namedParser[ExternalLoan]((p: String) => ColumnNaming.SnakeCase(p))
 
   private val completeRequest: String =
-    "SELECT * FROM external_loans el LEFT JOIN guests e on el.guests_id = e.guests_id"
+    "SELECT * FROM external_loans NATURAL LEFT JOIN guests"
 
-  private val completeParser: RowParser[CompleteExternalLoan] = loanParser ~ lenderParser map {
+  private val completeParser: RowParser[CompleteExternalLoan] = loanParser ~ guestsParser.? map {
     case loan ~ lender => CompleteExternalLoan.merge(loan, None, lender)
   }
 

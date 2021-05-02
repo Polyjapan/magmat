@@ -29,7 +29,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
 
     objectParser ~ objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {
       case obj ~ tpe ~ incStor ~ outStor ~ lender ~ loan =>
-        CompleteObject(obj, tpe, outStor, incStor, loan.flatMap(loanObject => lender.map(lenderObject => CompleteExternalLoan.merge(loanObject, None, lenderObject))))
+        CompleteObject(obj, tpe, outStor, incStor, loan.map(loanObject => CompleteExternalLoan.merge(loanObject, None, lender)))
     }
   }
 
@@ -101,10 +101,12 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     SQL("SELECT * FROM objects WHERE object_id = {id}").on("id" -> id).as(objectParser.singleOpt)
   })
 
-  def getLogs(id: Int): Future[List[ObjectLog]] = Future(db.withConnection { implicit connection =>
+  def getLogs(id: Int): Future[List[ObjectLogWithUser]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM object_logs WHERE object_id = {id} AND event_id = {eventId} ORDER BY timestamp DESC")
       .on("id" -> id, "eventId" -> eventId)
-      .as(objectLogParser.*)
+      .as((objectLogParser ~ guestsParser.?).map {
+        case objLog ~ optGuest => ObjectLogWithUser(objLog, None, None, optGuest)
+      }.*)
   })
 
   def getComments(id: Int): Future[List[ObjectComment]] = Future(db.withConnection { implicit connection =>

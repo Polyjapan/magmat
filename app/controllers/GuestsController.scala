@@ -4,7 +4,7 @@ import java.time.Clock
 
 import data.Guest
 import javax.inject.Inject
-import models.LendersModel
+import models.GuestsModel
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, ControllerComponents}
@@ -15,7 +15,7 @@ import scala.concurrent.ExecutionContext
 /**
  * @author Louis Vialar
  */
-class GuestsController @Inject()(cc: ControllerComponents, model: LendersModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class GuestsController @Inject()(cc: ControllerComponents, model: GuestsModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication

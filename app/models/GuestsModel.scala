@@ -10,12 +10,11 @@ import utils.SqlUtils
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class LendersModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionContext) {
+class GuestsModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionContext) {
 
   private val db = dbApi database "default"
 
   implicit val parameterList: ToParameterList[Guest] = Macro.toParameters[Guest]()
-  implicit val guestsParser: RowParser[Guest] = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
 
   def getAll: Future[List[Guest]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM guests").as(guestsParser.*)

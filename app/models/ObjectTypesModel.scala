@@ -35,7 +35,7 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
     objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {
       case tpe ~ incStor ~ outStor ~ lender ~ loan =>
         CompleteObjectType(tpe, outStor, incStor,
-          loan.flatMap(loanObject => lender.map(lenderObject => CompleteExternalLoan.merge(loanObject, None, lenderObject))))
+          loan.flatMap(loanObject => lender.map(lenderObject => CompleteExternalLoan.merge(loanObject, None, Some(lenderObject)))))
     }
   }
 

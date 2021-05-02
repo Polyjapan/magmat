@@ -5,7 +5,7 @@ import data.{CompleteObjectComment, ObjectLogWithUser, ObjectStatus, SingleObjec
 import models.{ObjectsModel, UsersModel}
 import play.api.Configuration
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, Action, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.AuthenticationPostfix._
 import utils.TidyingAlgo
 
@@ -69,13 +69,15 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getOne(id).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def getLogs(id: Int) = Action.async { req =>
+  def getLogs(id: Int): Action[AnyContent] = Action.async { req =>
     model.getLogs(id)
       .flatMap(r => {
-        val ids: Set[Int] = r.flatMap(obj => Set(obj.changedBy, obj.user)).toSet
+        val ids: Set[Int] = r.flatMap(obj => Set(obj.objectLog.changedBy) ++ obj.objectLog.user.toSet).toSet
         users.getUsersWithIds(ids).map {
           case Right(map) =>
-            Ok(Json.toJson(r.map(log => ObjectLogWithUser(log, map(log.changedBy), map(log.user)))))
+            Ok(Json.toJson(r.map(log => log.copy(
+              changedBy = map.unapply(log.objectLog.changedBy),
+              user = log.objectLog.user.flatMap(uId => map.unapply(uId))))))
           case Left(_) => InternalServerError
         }
       })

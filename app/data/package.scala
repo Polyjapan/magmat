@@ -31,10 +31,10 @@ package object data {
   }
 
 
-  case class ObjectLog(objectId: Int, eventId: Int, timestamp: DateTime, changedBy: Int, user: Int,
-                       sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value, signature: Option[String])
+  case class ObjectLog(objectId: Int, eventId: Int, timestamp: DateTime, changedBy: Int, user: Option[Int],
+                       guestId: Option[Int], sourceState: ObjectStatus.Value, targetState: ObjectStatus.Value, signature: Option[String])
 
-  case class ObjectLogWithUser(objectLog: ObjectLog, changedBy: UserProfile, user: UserProfile)
+  case class ObjectLogWithUser(objectLog: ObjectLog, changedBy: Option[UserProfile], user: Option[UserProfile], guest: Option[Guest])
 
   case class ObjectLogWithObject(objectLog: ObjectLog, `object`: SingleObject, objectType: ObjectType)
 
@@ -52,19 +52,19 @@ package object data {
                             partOfLoanObject: Option[CompleteExternalLoan],
                             reservedFor: Option[UserProfile] = None)
 
-  case class ExternalLoan(externalLoanId: Option[Int], externalLenderId: Int, eventId: Int, pickupTime: DateTime,
+  case class ExternalLoan(externalLoanId: Option[Int], guestId: Option[Int], userId: Option[Int], eventId: Int, pickupTime: DateTime,
                           returnTime: DateTime, loanDetails: Option[String], pickupPlace: Option[String], returnPlace: Option[String],
-                          status: LoanStatus.Value)
+                          loanTitle: String, status: LoanStatus.Value)
 
-  case class CompleteExternalLoan(externalLoan: ExternalLoan, event: Option[Event], lender: Guest)
+  case class CompleteExternalLoan(externalLoan: ExternalLoan, event: Option[Event], guest: Option[Guest], user: Option[UserProfile])
 
   object CompleteExternalLoan {
-    def merge(externalLoan: ExternalLoan, event: Option[Event], lender: Guest) =
+    def merge(externalLoan: ExternalLoan, event: Option[Event], lender: Option[Guest]) =
       CompleteExternalLoan(
         externalLoan.copy(
-          pickupPlace = externalLoan.pickupPlace.orElse(lender.location),
-          returnPlace = externalLoan.returnPlace.orElse(externalLoan.pickupPlace).orElse(lender.location)
-        ), event, lender)
+          pickupPlace = externalLoan.pickupPlace.orElse(lender.flatMap(_.location)),
+          returnPlace = externalLoan.returnPlace.orElse(externalLoan.pickupPlace).orElse(lender.flatMap(_.location))
+        ), event, lender, None)
   }
 
   implicit val loanStatusFormat: Format[LoanStatus.Value] = Json.formatEnum(LoanStatus)
@@ -118,6 +118,7 @@ package object data {
   implicit val complObjLogWithObj: Format[ObjectLogWithObject] = Json.format[ObjectLogWithObject]
   implicit val objComment: Format[ObjectComment] = Json.format[ObjectComment]
   implicit val complObjComment: Format[CompleteObjectComment] = Json.format[CompleteObjectComment]
+  implicit val guestsParser: RowParser[Guest] = Macro.namedParser[Guest](ColumnNaming.SnakeCase)
 
   implicit val objectTypeParser: RowParser[ObjectType] = Macro.namedParser[ObjectType](ColumnNaming.SnakeCase)
 

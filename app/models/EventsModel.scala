@@ -17,7 +17,7 @@ class EventsModel @Inject()(cache: SyncCacheApi, service: EventsService)(implici
 
   def getCurrentEvent: Future[SimpleEvent] =
     cache.getOrElseUpdate("current_event", 30.minutes) {
-      service.getCurrentEvent().map {
+      service.getCurrentEvent(visibility = Some(Visibility.Archived)).map {
         case Left(err) =>
           Logger("EventsModel").error("API Error while getting current event: " + err.error + " ; " + err.errorMessage)
           throw new Exception("API Error " + err.error)
