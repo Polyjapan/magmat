@@ -23,13 +23,13 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
        |LEFT JOIN storage_location sl2 on ot.inconv_storage_location = sl2.storage_location_id
        |LEFT JOIN storage_location sl on ot.storage_location = sl.storage_location_id
        |LEFT JOIN external_loans el on ot.part_of_loan = el.external_loan_id
-       |LEFT JOIN external_lenders e on el.external_lender_id = e.external_lender_id""".stripMargin
+       |LEFT JOIN guests e on el.guest_id = e.guest_id""".stripMargin
 
   private val completeObjectTypeParser: RowParser[CompleteObjectType] = {
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
     val inconvStorage = Macro.namedParser[StorageLocation]((p: String) => "inconv_" + ColumnNaming.SnakeCase(p))
     val offConvStorage = Macro.namedParser[StorageLocation]((p: String) => "offconv_" + ColumnNaming.SnakeCase(p))
-    val lender = Macro.namedParser[ExternalLender]((p: String) => "external_lenders." + ColumnNaming.SnakeCase(p))
+    val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
     val loan = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
 
     objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {

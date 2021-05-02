@@ -17,8 +17,8 @@ package object data {
   case class CompleteObjectType(objectType: ObjectType, storageLocationObject: Option[StorageLocation],
                                 inconvStorageLocationObject: Option[StorageLocation], partOfLoanObject: Option[CompleteExternalLoan])
 
-  case class ExternalLender(externalLenderId: Option[Int], name: String, description: Option[String], phoneNumber: String,
-                            email: String, location: String)
+  case class Guest(guestId: Option[Int], name: String, organization: Option[String], description: Option[String],
+                   phoneNumber: Option[String], email: Option[String], location: Option[String])
 
   object ObjectStatus extends Enumeration {
     type ObjectStatus = Value
@@ -56,14 +56,14 @@ package object data {
                           returnTime: DateTime, loanDetails: Option[String], pickupPlace: Option[String], returnPlace: Option[String],
                           status: LoanStatus.Value)
 
-  case class CompleteExternalLoan(externalLoan: ExternalLoan, event: Option[Event], lender: ExternalLender)
+  case class CompleteExternalLoan(externalLoan: ExternalLoan, event: Option[Event], lender: Guest)
 
   object CompleteExternalLoan {
-    def merge(externalLoan: ExternalLoan, event: Option[Event], lender: ExternalLender) =
+    def merge(externalLoan: ExternalLoan, event: Option[Event], lender: Guest) =
       CompleteExternalLoan(
         externalLoan.copy(
-          pickupPlace = externalLoan.pickupPlace.orElse(Some(lender.location)),
-          returnPlace = externalLoan.returnPlace.orElse(externalLoan.pickupPlace).orElse(Some(lender.location))
+          pickupPlace = externalLoan.pickupPlace.orElse(lender.location),
+          returnPlace = externalLoan.returnPlace.orElse(externalLoan.pickupPlace).orElse(lender.location)
         ), event, lender)
   }
 
@@ -105,7 +105,7 @@ package object data {
 
   implicit val datetimeRead: Reads[DateTime] = JodaReads.DefaultJodaDateTimeReads
   implicit val datetimeWrite: Writes[DateTime] = JodaWrites.JodaDateTimeWrites
-  implicit val lender: Format[ExternalLender] = Json.format[ExternalLender]
+  implicit val lender: Format[Guest] = Json.format[Guest]
   implicit val loan: Format[ExternalLoan] = Json.format[ExternalLoan]
   implicit val completeLoan: Format[CompleteExternalLoan] = Json.format[CompleteExternalLoan]
   implicit val locationJson: Format[StorageLocation] = Json.format[StorageLocation]

@@ -4,7 +4,7 @@ lazy val root = (project in file("."))
   .enablePlugins(PlayScala, JavaServerAppPackaging, DockerPlugin)
   .settings(
     name := "ji-inventory",
-    version := "1.0",
+    version := "1.0.1",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(jdbc, evolutions, ehcache, ws, specs2 % Test, guice),
 

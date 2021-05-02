@@ -47,10 +47,11 @@ POST          /objects/comments/:id                     controllers.ObjectsContr
 GET           /objects/comments/:id                     controllers.ObjectsController.getComments(id: Int)
 
 
-GET           /external-lenders/                        controllers.LendersController.getLenders
+GET           /guests/                                  controllers.GuestsController.getAll
 +nocsrf
-POST          /external-lenders/                        controllers.LendersController.create
-GET           /external-lenders/:id                     controllers.LendersController.getLender(id: Int)
+POST          /guests/                                  controllers.GuestsController.create
+GET           /guests/:id<[0-9]+>                       controllers.GuestsController.getOne(id: Int)
+GET           /guests/search                            controllers.GuestsController.search(q: String)
 
 GET           /external-loans/                          controllers.LoansController.getLoans
 +nocsrf

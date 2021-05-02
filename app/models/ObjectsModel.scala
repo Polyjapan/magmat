@@ -24,7 +24,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
     val inconvStorage = Macro.namedParser[StorageLocation]((p: String) => "inconv_" + ColumnNaming.SnakeCase(p))
     val offConvStorage = Macro.namedParser[StorageLocation]((p: String) => "offconv_" + ColumnNaming.SnakeCase(p))
-    val lender = Macro.namedParser[ExternalLender]((p: String) => "external_lenders." + ColumnNaming.SnakeCase(p))
+    val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
     val loan = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
 
     objectParser ~ objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {
@@ -58,7 +58,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       |LEFT JOIN storage_location sl2 on objects.actual_offconv_storage = sl2.storage_location_id
       |LEFT JOIN object_types ot on objects.object_type_id = ot.object_type_id
       |LEFT JOIN external_loans el on objects.actual_part_of_loan = el.external_loan_id
-      |LEFT JOIN external_lenders e on el.external_lender_id = e.external_lender_id
+      |LEFT JOIN guests e on el.guest_id = e.guest_id
       |""".stripMargin
 
   val BeforeLen = 3 + 12 // 12 columns in objects + the 3 magical ones we add

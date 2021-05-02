@@ -14,19 +14,25 @@ class LendersModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
 
   private val db = dbApi database "default"
 
-  implicit val parameterList: ToParameterList[ExternalLender] = Macro.toParameters[ExternalLender]()
-  implicit val lenderParser: RowParser[ExternalLender] = Macro.namedParser[ExternalLender]((p: String) => "external_lenders." + ColumnNaming.SnakeCase(p))
+  implicit val parameterList: ToParameterList[Guest] = Macro.toParameters[Guest]()
+  implicit val guestsParser: RowParser[Guest] = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
 
-  def getAll: Future[List[ExternalLender]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM external_lenders").as(lenderParser.*)
+  def getAll: Future[List[Guest]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM guests").as(guestsParser.*)
   })
 
-  def getOne(id: Int): Future[Option[ExternalLender]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM external_lenders WHERE external_lender_id = {id}").on("id" -> id).as(lenderParser.singleOpt)
+  def getOne(id: Int): Future[Option[Guest]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM guests WHERE guest_id = {id}").on("id" -> id).as(guestsParser.singleOpt)
   })
 
-  def create(create: ExternalLender): Future[Int] = Future(db.withConnection { implicit conn =>
-    SqlUtils.insertOne("external_lenders", create)
+  def search(query: String): Future[Option[Guest]] = Future(db.withConnection { implicit connection =>
+    SQL("SELECT * FROM guests WHERE name LIKE '%{query}%' OR organization LIKE '%{query}%' = {id}")
+      .on("query" -> query)
+      .as(guestsParser.singleOpt)
+  })
+
+  def create(create: Guest): Future[Int] = Future(db.withConnection { implicit conn =>
+    SqlUtils.insertOne("guests", create)
   })
 
 }
