@@ -31,6 +31,10 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
     map(None).map(buildSubTree)
   })
 
+  def getAll: Future[List[Storage]] = Future(db.withConnection { implicit conn =>
+    SQL("SELECT * FROM storage").as(storageParser.*)
+  })
+
   def create(body: Storage): Future[Option[Int]] = Future(db.withConnection { implicit conn =>
     SQL("INSERT INTO storage(parent_storage_id, storage_name, event) VALUES ({parentStorageId}, {storageName}, {event})")
       .bind(body)

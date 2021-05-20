@@ -2,7 +2,7 @@ package controllers
 
 import ch.japanimpact.auth.api.UserProfile
 import data.{CompleteObjectComment, ObjectLogWithUser, ObjectStatus, SingleObject}
-import models.{ObjectsModel, UsersModel}
+import models.{ObjectsModel, StorageModel, UsersModel}
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
@@ -16,7 +16,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * @author Louis Vialar
  */
-class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, users: UsersModel, storage: StorageModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll = Action.async { req =>
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
@@ -25,9 +25,19 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAllComplete(room, space).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def computeTidying(inverted: Option[Boolean]) = Action.async { req =>
-    model.getAllComplete().map(r => {
-      Ok(if (inverted.getOrElse(false)) TidyingAlgo.computeReversed(r) else TidyingAlgo.compute(r))
+  def computeTidying(inverted: Option[Boolean], leftDepth: Option[Int], rightDepth: Option[Int]) = Action.async { req =>
+    model.getAllComplete().flatMap(r => {
+      storage.getAll.map(stor => {
+        val data = TidyingAlgo.buildList(r, stor)
+
+        Ok apply Json.toJson {
+          if (inverted.getOrElse(false))
+            TidyingAlgo.fromStorageToConv(data, leftDepth.getOrElse(-1), rightDepth.getOrElse(-1))
+          else
+            TidyingAlgo.fromConvToStorage(data, leftDepth.getOrElse(-1), rightDepth.getOrElse(-1))
+        }(TidyingAlgo.resultWriter)
+      })
+
     })
   }.requiresAuthentication
 

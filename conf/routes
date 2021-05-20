@@ -21,7 +21,7 @@ GET           /objects/types/complete/:id               controllers.ObjectTypesC
 
 
 GET           /objects/                                 controllers.ObjectsController.getAll
-GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean])
+GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean], leftDepth: Option[Int] ?= None, rightDepth: Option[Int] ?= None)
 GET           /objects/complete                         controllers.ObjectsController.getAllComplete(room: Option[String] ?= None, space: Option[String] ?= None)
 GET           /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String)
 GET           /objects/nextSuffix/:tpe                  controllers.ObjectsController.getNextSuffix(tpe: Int, prefix: Option[String])
