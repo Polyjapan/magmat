@@ -69,17 +69,12 @@ PUT           /objects/types/:id                        controllers.ObjectTypesC
 +nocsrf
 DELETE        /objects/types/:id                        controllers.ObjectTypesController.deleteObjectType(id: Int)
 
-GET           /storage/tree                             controllers.StorageController.getTree
-
-GET           /locations                                controllers.LocationsController.getAll
-GET           /locations/filtered/:inConv               controllers.LocationsController.getAllByInConv(inConv: Boolean)
-GET           /locations/:id                            controllers.LocationsController.getOne(id: Int)
-
+GET           /storage/tree                             controllers.StorageController.getTree(eventId: Option[Int] ?= None)
 +nocsrf
-POST          /locations                                controllers.LocationsController.create
+POST          /storage                                  controllers.StorageController.create
 +nocsrf
-PUT           /locations/:id                            controllers.LocationsController.update(id: Int)
+PUT           /storage/:id                              controllers.StorageController.update(id: Int)
 +nocsrf
-DELETE        /locations/:id                            controllers.LocationsController.delete(id: Int)
+DELETE        /storage/:id                              controllers.StorageController.delete(id: Int)
 +nocsrf
-POST          /locations/move/:id                       controllers.LocationsController.moveItems(id: Int)
+POST          /storage/move/:id                         controllers.StorageController.moveItems(id: Int)

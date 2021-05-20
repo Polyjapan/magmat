@@ -1,6 +1,6 @@
 package controllers
 
-import data.StorageLocation
+import data.{Storage, StorageLocation}
 import models.StorageModel
 import play.api.Configuration
 import play.api.libs.json.Json
@@ -16,27 +16,20 @@ import scala.concurrent.{ExecutionContext, Future}
  */
 class StorageController @Inject()(cc: ControllerComponents, storage: StorageModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
 
-  def getTree: Action[AnyContent] = Action.async { implicit rq =>
-    storage.getStorageTree.map(tree => Ok(Json.toJson(tree)))
+  /**
+   * Gets the storage tree for non-event locations and a given event
+   * @param eventId the id of the event, or none to only get non-event locations
+   * @return
+   */
+  def getTree(eventId: Option[Int]): Action[AnyContent] = Action.async { implicit rq =>
+    storage.getStorageTree(eventId).map(tree => Ok(Json.toJson(tree)))
   }.requiresAuthentication
 
-  def getAll: Action[AnyContent] = Action.async { implicit rq =>
-    storage.getAll.map(lst => Ok(Json.toJson(lst)))
-  }.requiresAuthentication
-
-  def getAllByInConv(inConv: Boolean): Action[AnyContent] = Action.async { implicit rq =>
-    storage.getAllByInConv(inConv).map(lst => Ok(Json.toJson(lst)))
-  }.requiresAuthentication
-
-  def getOne(id: Int): Action[AnyContent] = Action.async { implicit rq =>
-    storage.getOne(id).map(lst => Ok(Json.toJson(lst)))
-  }.requiresAuthentication
-
-  def create: Action[StorageLocation] = Action.async(parse.json[StorageLocation]) { req =>
+  def create: Action[Storage] = Action.async(parse.json[Storage]) { req =>
     storage.create(req.body).map(opt => Ok(Json.toJson(opt)))
   }.requiresAuthentication
 
-  def update(id: Int): Action[StorageLocation] = Action.async(parse.json[StorageLocation]) { req =>
+  def update(id: Int): Action[Storage] = Action.async(parse.json[Storage]) { req =>
     storage.update(id, req.body).map(opt => Ok(Json.toJson(opt > 0)))
   }.requiresAuthentication
 
@@ -44,6 +37,8 @@ class StorageController @Inject()(cc: ControllerComponents, storage: StorageMode
     storage.delete(id).map(opt => Ok(Json.toJson(opt)))
   }.requiresAuthentication
 
+  def moveItems(targetStorage: Int) = TODO
+  /*
   def moveItems(targetStorage: Int) = Action.async(parse.json(8000)) { req =>
     val items = (req.body \ "items").as[List[String]].map(_.trim).filter(_.nonEmpty)
     val moveType = (req.body \ "moveType").as[Boolean]
@@ -60,4 +55,5 @@ class StorageController @Inject()(cc: ControllerComponents, storage: StorageMode
       case None => Future(NotFound)
     }
   }.requiresAuthentication
+   */
 }

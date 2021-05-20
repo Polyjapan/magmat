@@ -14,11 +14,13 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
   private val db = dbApi database "default"
 
   implicit val locationQueryBuilder: ToParameterList[StorageLocation] = Macro.toParameters[StorageLocation]()
+  implicit val storageParams: ToParameterList[Storage] = Macro.toParameters[Storage]()
   implicit val locationParser: RowParser[StorageLocation] = Macro.namedParser[StorageLocation](ColumnNaming.SnakeCase)
   implicit val storageParser: RowParser[Storage] = Macro.namedParser[Storage](ColumnNaming.SnakeCase)
 
-  def getStorageTree: Future[List[StorageTree]] = Future(db.withConnection { implicit conn =>
-    val locs = SQL("SELECT * FROM storage").as(storageParser.*)
+  def getStorageTree(eventId: Option[Int] = None): Future[List[StorageTree]] = Future(db.withConnection { implicit conn =>
+    val whereClause = eventId.map(ev => s"WHERE event = $ev OR event IS NULL").getOrElse("WHERE event IS NULL")
+    val locs = SQL("SELECT * FROM storage " + whereClause).as(storageParser.*)
     val map = locs.groupBy(_.parentStorageId).withDefaultValue(List())
 
     def buildSubTree(storage: Storage): StorageTree = {
@@ -29,36 +31,29 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
     map(None).map(buildSubTree)
   })
 
-  def getAll: Future[List[StorageLocation]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM storage_location ORDER BY room, space, location").as(locationParser.*)
-  })
-
-  def getAllByInConv(inConv: Boolean): Future[List[StorageLocation]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM storage_location WHERE in_conv = {inconv} ORDER BY room, space, location").on("inconv" -> inConv).as(locationParser.*)
-  })
-
-  def getOne(id: Int): Future[Option[StorageLocation]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM storage_location WHERE storage_location_id = {id}").on("id" -> id).as(locationParser.singleOpt)
-  })
-
-  def create(body: StorageLocation): Future[Option[Int]] = Future(db.withConnection { implicit conn =>
-    val parser = scalar[Int]
-    SQL("INSERT INTO storage_location(in_conv, room, space, location) VALUES ({inConv}, {room}, {space}, {location})")
+  def create(body: Storage): Future[Option[Int]] = Future(db.withConnection { implicit conn =>
+    SQL("INSERT INTO storage(parent_storage_id, storage_name, event) VALUES ({parentStorageId}, {storageName}, {event})")
       .bind(body)
       .executeInsert(scalar[Int].singleOpt)
   })
 
-  def update(id: Int, body: StorageLocation): Future[Int] = Future(db.withConnection { implicit conn =>
-    SQL("UPDATE storage_location SET in_conv = {inConv}, room = {room}, space = {space}, location = {location} WHERE storage_location_id = {storageLocationId}")
-      .bind(body.copy(storageLocationId = Some(id)))
+  def update(id: Int, body: Storage): Future[Int] = Future(db.withConnection { implicit conn =>
+    SQL("UPDATE storage SET parent_storage_id = {parentStorageId}, storage_name = {storageName}, event = {event} WHERE storage_id = {storageId}")
+      .bind(body.copy(storageId = Some(id)))
       .executeUpdate()
   })
 
   def delete(id: Int): Future[Boolean] = Future(db.withConnection { implicit conn =>
-    SQL("DELETE FROM storage_location WHERE storage_location_id = {id}")
+    SQL("DELETE FROM storage WHERE storage_id = {id}")
       .on("id" -> id)
       .execute()
   })
+
+
+  // OLD STUFF BELOW
+
+
+  // TODO
 
   def moveItems(items: List[String], targetStorage: StorageLocation) = Future(db.withConnection { implicit conn =>
     val field = if (targetStorage.inConv) "inconv_storage_location" else "storage_location"
