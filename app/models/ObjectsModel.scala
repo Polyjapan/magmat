@@ -3,69 +3,54 @@ package models
 import anorm.Macro.ColumnNaming
 import anorm._
 import data._
-import javax.inject.{Inject, Singleton}
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, users: UsersModel)(implicit ec: ExecutionContext) {
-
-  private val db = dbApi database "default"
-
-  implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
-  implicit val objectParser: RowParser[SingleObject] = Macro.namedParser[SingleObject]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
-  implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
-  implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
-
-  private val completeObjectParser: RowParser[CompleteObject] = {
-    val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
-    val inconvStorage = Macro.namedParser[StorageLocation]((p: String) => "inconv_" + ColumnNaming.SnakeCase(p))
-    val offConvStorage = Macro.namedParser[StorageLocation]((p: String) => "offconv_" + ColumnNaming.SnakeCase(p))
-    val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
-    val loan = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
-
-    objectParser ~ objectType ~ inconvStorage.? ~ offConvStorage.? ~ lender.? ~ loan.? map {
-      case obj ~ tpe ~ incStor ~ outStor ~ lender ~ loan =>
-        CompleteObject(obj, tpe, outStor, incStor, loan.map(loanObject => CompleteExternalLoan.merge(loanObject, None, lender)))
-    }
-  }
-
-  private def collectReservedFor(objects: List[CompleteObject]): Future[List[CompleteObject]] = {
-    val reservedForSet = objects.flatMap(_.`object`.reservedFor).toSet
-
-    if (reservedForSet.isEmpty) {
-      Future.successful(objects)
-    } else {
-      users.getUsersWithIds(reservedForSet).map {
-        case Right(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.unapply)))
-        case Left(_) => objects
-      }
-    }
-  }
-
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
   val completeRequest =
     """SELECT * FROM (SELECT o.*,
-      | IF(o.inconv_storage_location IS NULL, ot.inconv_storage_location, o.inconv_storage_location) AS actual_inconv_storage,
-      | IF(o.storage_location IS NULL, ot.storage_location, o.storage_location) AS actual_offconv_storage,
-      | IF(o.part_of_loan IS NULL, ot.part_of_loan, o.part_of_loan) AS actual_part_of_loan
+      |     IF(o.part_of_loan IS NULL, ot.part_of_loan, o.part_of_loan) AS actual_part_of_loan
       |  FROM objects o
       |LEFT JOIN object_types ot on o.object_type_id = ot.object_type_id) AS objects
-      |LEFT JOIN storage_location sl on objects.actual_inconv_storage = sl.storage_location_id
-      |LEFT JOIN storage_location sl2 on objects.actual_offconv_storage = sl2.storage_location_id
       |LEFT JOIN object_types ot on objects.object_type_id = ot.object_type_id
       |LEFT JOIN external_loans el on objects.actual_part_of_loan = el.external_loan_id
       |LEFT JOIN guests e on el.guest_id = e.guest_id
       |""".stripMargin
 
+  implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
+  implicit val objectParser: RowParser[SingleObject] = Macro.namedParser[SingleObject]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
+  implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
+  implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
   val BeforeLen = 3 + 12 // 12 columns in objects + the 3 magical ones we add
+  private val db = dbApi database "default"
+  private val completeObjectParser: RowParser[CompleteObject] = {
+    val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
+    val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
+    val loan = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
+
+    objectParser ~ objectType ~ lender.? ~ loan.? map {
+      case obj ~ tpe ~ lender ~ loan =>
+        CompleteObject(obj, tpe, loan.map(loanObject => CompleteExternalLoan.merge(loanObject, None, lender)))
+    }
+  }
 
   def getAll: Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE status != 'DELETED'").as(objectParser.*)
   })
 
-  def getAllComplete: Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE objects.status != 'DELETED'").asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+  def getAllComplete(room: Option[String] = None, space: Option[String] = None): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    val whereClause = " WHERE objects.status != 'DELETED'" + {
+      if (room.isDefined) " AND (sl.room = {room} OR sl2.room = {room})" else ""
+    } + {
+      if (space.isDefined) " AND (sl.space = {space} OR sl2.space = {space})" else ""
+    }
+
+    SQL(completeRequest + whereClause)
+      .on("room" -> room.getOrElse("none"), "space" -> space.getOrElse("none"))
+      .asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByType(typeId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
@@ -146,18 +131,11 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
 
-  def getOneComplete(id: Int): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
-      .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
-  }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
-
-
   def updateOne(id: Int, body: SingleObject) = Future(db.withConnection { implicit conn =>
     val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "inconvStorageLocation", "partOfLoan", "reservedFor", "assetTag", "plannedUse", "depositPlace").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
 
     SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(body.copy(objectId = Some(id))).executeUpdate()
   })
-
 
   def insertAll(obj: Array[SingleObject]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
     val params1: List[Seq[NamedParameter]] = obj.toList.map(parameterList)
@@ -178,6 +156,24 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       .as(SqlParser.scalar[Int].*)
   }).map(objects => objects.map(getOneComplete))
     .flatMap(objects => Future.foldLeft(objects)(List.empty[CompleteObject])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
+
+  def getOneComplete(id: Int): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
+      .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
+  }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
+
+  private def collectReservedFor(objects: List[CompleteObject]): Future[List[CompleteObject]] = {
+    val reservedForSet = objects.flatMap(_.`object`.reservedFor).toSet
+
+    if (reservedForSet.isEmpty) {
+      Future.successful(objects)
+    } else {
+      users.getUsersWithIds(reservedForSet).map {
+        case Right(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.unapply)))
+        case Left(_) => objects
+      }
+    }
+  }
 
   def getObjectsLoaned = Future(db.withConnection { implicit c =>
     SQL("SELECT T.object_id, user FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND target_state != 'DELETED'")

@@ -15,6 +15,19 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
 
   implicit val locationQueryBuilder: ToParameterList[StorageLocation] = Macro.toParameters[StorageLocation]()
   implicit val locationParser: RowParser[StorageLocation] = Macro.namedParser[StorageLocation](ColumnNaming.SnakeCase)
+  implicit val storageParser: RowParser[Storage] = Macro.namedParser[Storage](ColumnNaming.SnakeCase)
+
+  def getStorageTree: Future[List[StorageTree]] = Future(db.withConnection { implicit conn =>
+    val locs = SQL("SELECT * FROM storage").as(storageParser.*)
+    val map = locs.groupBy(_.parentStorageId).withDefaultValue(List())
+
+    def buildSubTree(storage: Storage): StorageTree = {
+      val children = map(storage.storageId).map(buildSubTree)
+      StorageTree(storage.storageId, storage.parentStorageId, children, storage.storageName, storage.event)
+    }
+
+    map(None).map(buildSubTree)
+  })
 
   def getAll: Future[List[StorageLocation]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM storage_location ORDER BY room, space, location").as(locationParser.*)

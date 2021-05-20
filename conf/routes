@@ -22,7 +22,7 @@ GET           /objects/types/complete/:id               controllers.ObjectTypesC
 
 GET           /objects/                                 controllers.ObjectsController.getAll
 GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean])
-GET           /objects/complete                         controllers.ObjectsController.getAllComplete
+GET           /objects/complete                         controllers.ObjectsController.getAllComplete(room: Option[String] ?= None, space: Option[String] ?= None)
 GET           /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String)
 GET           /objects/nextSuffix/:tpe                  controllers.ObjectsController.getNextSuffix(tpe: Int, prefix: Option[String])
 GET           /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int)
@@ -68,6 +68,8 @@ POST          /objects/types                            controllers.ObjectTypesC
 PUT           /objects/types/:id                        controllers.ObjectTypesController.updateObjectType(id: Int)
 +nocsrf
 DELETE        /objects/types/:id                        controllers.ObjectTypesController.deleteObjectType(id: Int)
+
+GET           /storage/tree                             controllers.StorageController.getTree
 
 GET           /locations                                controllers.LocationsController.getAll
 GET           /locations/filtered/:inConv               controllers.LocationsController.getAllByInConv(inConv: Boolean)

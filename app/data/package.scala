@@ -9,13 +9,18 @@ import ch.japanimpact.api.events.events.Event
 
 package object data {
 
+  case class Storage(storageId: Option[Int], parentStorageId: Option[Int], storageName: String, event: Option[Int])
+
+  //case class StorageWithParents(storageId: Option[Int], parent: Option[StorageWithParents], storageName: String, event: Option[Int])
+
+  case class StorageTree(storageId: Option[Int], parentStorageId: Option[Int], children: List[StorageTree], storageName: String, event: Option[Int])
+
   case class StorageLocation(storageLocationId: Option[Int], inConv: Boolean, room: String, space: Option[String], location: Option[String])
 
   case class ObjectType(objectTypeId: Option[Int], name: String, description: Option[String], storageLocation: Option[Int],
                         inconvStorageLocation: Option[Int], partOfLoan: Option[Int], requiresSignature: Boolean)
 
-  case class CompleteObjectType(objectType: ObjectType, storageLocationObject: Option[StorageLocation],
-                                inconvStorageLocationObject: Option[StorageLocation], partOfLoanObject: Option[CompleteExternalLoan])
+  case class CompleteObjectType(objectType: ObjectType, partOfLoanObject: Option[CompleteExternalLoan])
 
   case class Guest(guestId: Option[Int], name: String, organization: Option[String], description: Option[String],
                    phoneNumber: Option[String], email: Option[String], location: Option[String])
@@ -47,8 +52,6 @@ package object data {
                           reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None, depositPlace: Option[String] = None)
 
   case class CompleteObject(`object`: SingleObject, objectType: ObjectType,
-                            storageLocationObject: Option[StorageLocation],
-                            inconvStorageLocationObject: Option[StorageLocation],
                             partOfLoanObject: Option[CompleteExternalLoan],
                             reservedFor: Option[UserProfile] = None)
 
@@ -109,6 +112,8 @@ package object data {
   implicit val loan: Format[ExternalLoan] = Json.format[ExternalLoan]
   implicit val completeLoan: Format[CompleteExternalLoan] = Json.format[CompleteExternalLoan]
   implicit val locationJson: Format[StorageLocation] = Json.format[StorageLocation]
+  implicit val storageJson: Format[Storage] = Json.format[Storage]
+  implicit val storageTreeJson: Format[StorageTree] = Json.format[StorageTree]
   implicit val typeJson: Format[ObjectType] = Json.format[ObjectType]
   implicit val completeTypeJson: Format[CompleteObjectType] = Json.format[CompleteObjectType]
   implicit val obj: Format[SingleObject] = Json.format[SingleObject]

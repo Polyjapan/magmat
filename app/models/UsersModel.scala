@@ -24,6 +24,6 @@ class UsersModel @Inject()(val usersApi: UsersApi)(implicit val ec: ExecutionCon
   }
 
   def searchUsers(query: String): Future[Either[APIError, Seq[UserProfile]]] = {
-    usersApi.searchUsers(query)
+    usersApi.searchUsers(query).map(_.map(_.take(10)))
   }
 }

@@ -21,8 +21,12 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAll.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
+  def getAllComplete(room: Option[String] = None, space: Option[String] = None) = Action.async { req =>
+    model.getAllComplete(room, space).map(r => Ok(Json.toJson(r)))
+  }.requiresAuthentication
+
   def computeTidying(inverted: Option[Boolean]) = Action.async { req =>
-    model.getAllComplete.map(r => {
+    model.getAllComplete().map(r => {
       Ok(if (inverted.getOrElse(false)) TidyingAlgo.computeReversed(r) else TidyingAlgo.compute(r))
     })
   }.requiresAuthentication
@@ -55,10 +59,6 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
         if (filteredNums.isEmpty) 1 else filteredNums.max + 1
       }
     }).map(n => Ok(Json.toJson(n)))
-  }.requiresAuthentication
-
-  def getAllComplete = Action.async { req =>
-    model.getAllComplete.map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
   def getOneComplete(id: Int) = Action.async { req =>

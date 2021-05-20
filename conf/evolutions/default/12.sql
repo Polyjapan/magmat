@@ -110,3 +110,24 @@ set storage_location = mapping.storage_id
 where storage_location is not null;
 
 
+alter table objects
+    add constraint objects_storage_storage_id_fk
+        foreign key (storage_location) references storage (storage_id)
+            on delete set null;
+
+alter table objects
+    add constraint objects_storage_storage_id_fk_2
+        foreign key (inconv_storage_location) references storage (storage_id)
+            on delete set null;
+
+alter table object_types
+    add constraint object_types_storage_storage_id_fk
+        foreign key (storage_location) references storage (storage_id)
+            on delete set null;
+
+alter table object_types
+    add constraint object_types_storage_storage_id_fk_2
+        foreign key (inconv_storage_location) references storage (storage_id)
+            on delete set null;
+
+delete from storage where trim(storage_name) = '';

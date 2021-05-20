@@ -6,19 +6,18 @@ import play.api.libs.json.{JsObject, Json}
 import scala.collection.MapView
 
 object TidyingAlgo {
-  def compute(r: List[CompleteObject]) = {
-    doCompute(r,
+  def compute(r: List[CompleteObject]): JsObject = {
+    /*doCompute(r,
       _.inconvStorageLocationObject.map(Left(_)),
       o => o.partOfLoanObject.map(Right(_)).orElse(o.storageLocationObject.map(Left(_)))
-    )
+    )*/ ???
   }
 
-  def computeReversed(r: List[CompleteObject]) = {
-    doCompute(r,
-
+  def computeReversed(r: List[CompleteObject]): JsObject = {
+    /*doCompute(r,
       o => o.partOfLoanObject.map(Right(_)).orElse(o.storageLocationObject.map(Left(_))),
       _.inconvStorageLocationObject.map(Left(_))
-    )
+    )*/ ???
   }
 
   private def doCompute(r: List[CompleteObject], sourceMapper: CompleteObject => Option[Either[StorageLocation, CompleteExternalLoan]], targetMapper: CompleteObject => Option[Either[StorageLocation, CompleteExternalLoan]]) = {
@@ -27,7 +26,7 @@ object TidyingAlgo {
       r.filterNot(elem => elem.partOfLoanObject.exists(_.externalLoan.status != LoanStatus.AwaitingReturn))
 
     def dropUselessValues(lst: List[CompleteObject]) =
-      lst.map(_.copy(storageLocationObject = None, inconvStorageLocationObject = None, partOfLoanObject = None))
+      lst.map(_.copy(partOfLoanObject = None))
 
     def groupByTarget(objects: List[CompleteObject]) = {
       val (withTarget, unstored) = objects.partition(o => targetMapper(o).isDefined)
