@@ -4,8 +4,9 @@ import anorm.Macro.ColumnNaming
 import anorm.SqlParser.scalar
 import anorm._
 import data._
-import javax.inject.{Inject, Singleton}
+import utils.SqlUtils
 
+import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
@@ -43,8 +44,27 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
     SQL("SELECT * FROM object_types WHERE part_of_loan = {loan} AND deleted = 0").on("loan" -> loan).as(objectTypeParser.*)
   })
 
-  def getAllComplete: Future[List[CompleteObjectType]] = Future(db.withConnection { implicit connection =>
-    SQL(completeObjectRequest + " WHERE deleted = 0").asTry(completeObjectTypeParser.*, completeObjectTypeAliaser).get
+  def getAllByEvent(event: Option[Int]): Future[List[ObjectType]] = Future(db.withConnection { implicit connection =>
+    val whereClause = event.map(ev => s"(el.event_id = $ev OR el.event_id is null)").getOrElse("el.event_id is null")
+    SQL("SELECT ot.* FROM object_types ot LEFT JOIN external_loans el ON el.external_loan_id = ot.part_of_loan WHERE deleted = 0 AND " + whereClause)
+      .as(objectTypeParser.*)
+  })
+
+  def getObjectTypeTree(eventId: Option[Int] = None): Future[List[ObjectTypeTree]] = getAllByEvent(eventId) map { objects =>
+    val map = objects.groupBy(_.parentObjectTypeId).withDefaultValue(List())
+
+    def buildSubTree(ot: ObjectType): ObjectTypeTree = {
+      val children = map(ot.objectTypeId).map(buildSubTree)
+      ObjectTypeTree(ot, children)
+    }
+
+    map(None).map(buildSubTree)
+  }
+
+  def getAllCompleteByEvent(eventId: Option[Int]): Future[List[CompleteObjectType]] = Future(db.withConnection { implicit connection =>
+    val whereClause = eventId.map(ev => s"(el.event_id = $ev OR el.event_id is null)").getOrElse("el.event_id is null")
+
+    SQL(completeObjectRequest + " WHERE deleted = 0 AND " + whereClause).asTry(completeObjectTypeParser.*, completeObjectTypeAliaser).get
   })
 
   def getOne(id: Int): Future[Option[ObjectType]] = Future(db.withConnection { implicit connection =>
@@ -57,20 +77,26 @@ class ObjectTypesModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel)(
   })
 
   def create(tpe: ObjectType): Future[Option[Int]] = Future(db.withConnection { implicit conn =>
-    val parser = scalar[Int]
-    SQL("INSERT INTO object_types(name, description, storage_location, inconv_storage_location, part_of_loan, requires_signature) " +
-      "VALUES ({name}, {description}, {storageLocation}, {inconvStorageLocation}, {partOfLoan}, {requiresSignature})")
-      .bind(tpe)
-      .executeInsert(scalar[Int].singleOpt)
+    Some(SqlUtils.insertOne("object_types", tpe))
   })
 
   def update(id: Int, tpe: ObjectType): Future[Int] = Future(db.withConnection { implicit conn =>
-    val parser = scalar[Int]
-    SQL("UPDATE object_types SET name = {name}, description = {description}, storage_location = {storageLocation}, " +
-      "inconv_storage_location = {inconvStorageLocation}, part_of_loan = {partOfLoan}, requires_signature = {requiresSignature} WHERE object_type_id = {id}")
+    val r = SQL("UPDATE object_types SET parent_object_type_id = {parentObjectTypeId}, name = {name}, " +
+      "description = {description}, part_of_loan = {partOfLoan} WHERE object_type_id = {id}")
       .bind(tpe)
       .on("id" -> id)
       .executeUpdate()
+
+    SQL("""update object_types join (
+          |    WITH RECURSIVE rec(id, parent_id) as (
+          |        select object_type_id, parent_object_type_id from object_types where parent_object_type_id = {id}
+          |        union all select p.object_type_id, p.parent_object_type_id from object_types p inner join rec on rec.id = p.parent_object_type_id
+          |    ) select object_types.object_type_id from object_types left join rec on rec.id = object_types.parent_object_type_id where rec.id is not null or object_types.object_type_id = {id}
+          |) as r on r.object_type_id = object_types.object_type_id set part_of_loan = {loanId} where 1""".stripMargin)
+      .on("id" -> id, "loanId" -> tpe.partOfLoan)
+      .executeUpdate()
+
+    r
   })
 
   def delete(eventId: Int, id: Int, user: Int): Future[Unit] = Future(db.withConnection { implicit conn =>

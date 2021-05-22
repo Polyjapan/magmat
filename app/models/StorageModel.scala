@@ -42,9 +42,21 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
   })
 
   def update(id: Int, body: Storage): Future[Int] = Future(db.withConnection { implicit conn =>
-    SQL("UPDATE storage SET parent_storage_id = {parentStorageId}, storage_name = {storageName}, event = {event} WHERE storage_id = {storageId}")
+    val r = SQL("UPDATE storage SET parent_storage_id = {parentStorageId}, storage_name = {storageName}, event = {event} WHERE storage_id = {storageId}")
       .bind(body.copy(storageId = Some(id)))
       .executeUpdate()
+
+    // Update the eventId in children
+    SQL("""update storage join (
+          |    WITH RECURSIVE rec(storage_id, parent_storage_id) as (
+          |        select storage_id, parent_storage_id from storage where parent_storage_id = {id}
+          |        union all select p.storage_id, p.parent_storage_id from storage p inner join rec on rec.storage_id = p.parent_storage_id
+          |    ) select storage.storage_id from storage left join rec on rec.storage_id = storage.storage_id where rec.storage_id is not null or storage.storage_id = {id}
+          |) as r on r.storage_id = storage.storage_id set event = {eventId} where 1""".stripMargin)
+      .on("id" -> id, "eventId" -> body.event)
+      .executeUpdate()
+
+    r
   })
 
   def delete(id: Int): Future[Boolean] = Future(db.withConnection { implicit conn =>

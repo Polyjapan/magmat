@@ -67,8 +67,8 @@ object TidyingAlgo {
 
     r map { obj =>
       ObjectWithLocationInfo(obj.`object`.copy(suffix = obj.objectType.name + " " + obj.`object`.suffix), // helper for the client
-        obj.partOfLoanObject.map(e => Right(e)).orElse(obj.`object`.storageLocation.orElse(obj.objectType.storageLocation).map(trees).map(t => Left(t))),
-        obj.`object`.inconvStorageLocation.orElse(obj.objectType.inconvStorageLocation).map(trees)
+        obj.partOfLoanObject.map(e => Right(e)).orElse(obj.`object`.storageLocation.map(trees).map(t => Left(t))),
+        obj.`object`.inconvStorageLocation.map(trees)
       )
     }
   }

@@ -17,8 +17,9 @@ package object data {
 
   case class StorageLocation(storageLocationId: Option[Int], inConv: Boolean, room: String, space: Option[String], location: Option[String])
 
-  case class ObjectType(objectTypeId: Option[Int], name: String, description: Option[String], storageLocation: Option[Int],
-                        inconvStorageLocation: Option[Int], partOfLoan: Option[Int], requiresSignature: Boolean)
+  case class ObjectType(objectTypeId: Option[Int], parentObjectTypeId: Option[Int], name: String, description: Option[String], partOfLoan: Option[Int])
+
+  case class ObjectTypeTree(objectType: ObjectType, children: List[ObjectTypeTree])
 
   case class CompleteObjectType(objectType: ObjectType, partOfLoanObject: Option[CompleteExternalLoan])
 
@@ -49,7 +50,8 @@ package object data {
 
   case class SingleObject(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
                           storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
-                          reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None, depositPlace: Option[String] = None)
+                          reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None,
+                          depositPlace: Option[String] = None, requiresSignature: Boolean = false)
 
   case class CompleteObject(`object`: SingleObject, objectType: ObjectType,
                             partOfLoanObject: Option[CompleteExternalLoan],
@@ -116,6 +118,7 @@ package object data {
   implicit val storageTreeJson: OFormat[StorageTree] = Json.format[StorageTree]
   implicit val typeJson: Format[ObjectType] = Json.format[ObjectType]
   implicit val completeTypeJson: Format[CompleteObjectType] = Json.format[CompleteObjectType]
+  implicit val completeTypeTreeJson: Format[ObjectTypeTree] = Json.format[ObjectTypeTree]
   implicit val obj: OFormat[SingleObject] = Json.format[SingleObject]
   implicit val complObj: Format[CompleteObject] = Json.format[CompleteObject]
   implicit val objLog: Format[ObjectLog] = Json.format[ObjectLog]

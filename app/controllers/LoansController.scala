@@ -16,12 +16,9 @@ import scala.concurrent.{ExecutionContext, Future}
  * @author Louis Vialar
  */
 class LoansController @Inject()(cc: ControllerComponents, model: LoansModel, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
-  def getLoans: Action[AnyContent] = Action.async { req =>
-    model.getAll.map(r => Ok(Json.toJson(r)))
-  }.requiresAuthentication
 
-  def getCompleteLoans: Action[AnyContent] = Action.async { req =>
-    model.getAllComplete
+  def getCompleteLoans(eventId: Option[Int]): Action[AnyContent] = Action.async { req =>
+    model.getAllComplete(eventId)
       .flatMap { loans =>
         val userIds = loans.flatMap(_.externalLoan.userId).toSet
         users.getUsersWithIds(userIds).map {
@@ -44,10 +41,6 @@ class LoansController @Inject()(cc: ControllerComponents, model: LoansModel, use
         case other => Future.successful(other)
       }
       .map(r => Ok(Json.toJson(r)))
-  }.requiresAuthentication
-
-  def getLoan(id: Int): Action[AnyContent] = Action.async { req =>
-    model.getOne(id).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
   def create: Action[ExternalLoan] = Action.async(parse.json[ExternalLoan]) { req =>

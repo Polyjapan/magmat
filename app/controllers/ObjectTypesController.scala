@@ -16,16 +16,20 @@ import scala.concurrent.ExecutionContext
  * @author Louis Vialar
  */
 class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTypesModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
-  def getObjectTypes = Action.async { req =>
-    model.getAll.map(r => Ok(Json.toJson(r)))
+  def getObjectTypes(eventId: Option[Int]) = Action.async { req =>
+    model.getAllByEvent(eventId).map(r => Ok(Json.toJson(r)))
+  }.requiresAuthentication
+
+  def getObjectTypesTree(eventId: Option[Int]) = Action.async { req =>
+    model.getObjectTypeTree(eventId).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
   def getObjectTypesByLoan(loan: Int) = Action.async { req =>
     model.getAllByLoan(loan).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def getCompleteObjectTypes = Action.async { req =>
-    model.getAllComplete.map(r => Ok(Json.toJson(r)))
+  def getCompleteObjectTypes(eventId: Option[Int]) = Action.async { req =>
+    model.getAllCompleteByEvent(eventId).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
   def getCompleteObjectType(id: Int) = Action.async { req =>

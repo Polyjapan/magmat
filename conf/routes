@@ -13,9 +13,10 @@ GET           /events/current                           controllers.EventsContro
 GET           /events                                   controllers.EventsController.getEvents
 GET           /events/switch/:id                        controllers.EventsController.switchEvent(id: Int)
 
-GET           /objects/types/                           controllers.ObjectTypesController.getObjectTypes
+GET           /objects/types/                           controllers.ObjectTypesController.getObjectTypes(eventId: Option[Int] ?= None)
+GET           /objects/types/tree                       controllers.ObjectTypesController.getObjectTypesTree(eventId: Option[Int] ?= None)
 GET           /objects/types/by-loan/:loan              controllers.ObjectTypesController.getObjectTypesByLoan(loan: Int)
-GET           /objects/types/complete                   controllers.ObjectTypesController.getCompleteObjectTypes
+GET           /objects/types/complete                   controllers.ObjectTypesController.getCompleteObjectTypes(eventId: Option[Int] ?= None)
 GET           /objects/types/:id                        controllers.ObjectTypesController.getObjectType(id: Int)
 GET           /objects/types/complete/:id               controllers.ObjectTypesController.getCompleteObjectType(id: Int)
 
@@ -53,14 +54,12 @@ POST          /guests/                                  controllers.GuestsContro
 GET           /guests/:id<[0-9]+>                       controllers.GuestsController.getOne(id: Int)
 GET           /guests/search                            controllers.GuestsController.search(q: String)
 
-GET           /external-loans/                          controllers.LoansController.getLoans
+GET           /external-loans                           controllers.LoansController.getCompleteLoans(eventId: Option[Int] ?= None)
 +nocsrf
-POST          /external-loans/                          controllers.LoansController.create
+POST          /external-loans                           controllers.LoansController.create
 +nocsrf
 PUT           /external-loans/:id/state                 controllers.LoansController.changeState(id: Int)
-GET           /external-loans/complete                  controllers.LoansController.getCompleteLoans
-GET           /external-loans/:id                       controllers.LoansController.getLoan(id: Int)
-GET           /external-loans/complete/:id              controllers.LoansController.getCompleteLoan(id: Int)
+GET           /external-loans/:id                       controllers.LoansController.getCompleteLoan(id: Int)
 
 +nocsrf
 POST          /objects/types                            controllers.ObjectTypesController.createObjectType
