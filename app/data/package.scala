@@ -21,8 +21,6 @@ package object data {
 
   case class ObjectTypeTree(objectType: ObjectType, children: List[ObjectTypeTree])
 
-  case class CompleteObjectType(objectType: ObjectType, partOfLoanObject: Option[CompleteExternalLoan])
-
   case class Guest(guestId: Option[Int], name: String, organization: Option[String], description: Option[String],
                    phoneNumber: Option[String], email: Option[String], location: Option[String])
 
@@ -42,18 +40,25 @@ package object data {
 
   case class ObjectLogWithUser(objectLog: ObjectLog, changedBy: Option[UserProfile], user: Option[UserProfile], guest: Option[Guest])
 
-  case class ObjectLogWithObject(objectLog: ObjectLog, `object`: SingleObject, objectType: ObjectType)
+  case class ObjectLogWithObject(objectLog: ObjectLog, `object`: SingleObjectJson, objectType: ObjectType)
 
   case class ObjectComment(objectId: Int, eventId: Int, timestamp: DateTime, writer: Int, comment: String)
 
   case class CompleteObjectComment(objectComment: ObjectComment, writer: UserProfile)
 
-  case class SingleObject(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
-                          storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
-                          reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None,
-                          depositPlace: Option[String] = None, requiresSignature: Boolean = false)
+  case class SingleObjectJson(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
+                              storageLocation: Option[Int], inconvStorageLocation: Option[Int], partOfLoan: Option[Int],
+                              reservedFor: Option[Int], assetTag: Option[String], status: ObjectStatus.Value, plannedUse: Option[String] = None,
+                              depositPlace: Option[String] = None, requiresSignature: Boolean = false)
 
-  case class CompleteObject(`object`: SingleObject, objectType: ObjectType,
+  case class SingleObjectDB(objectId: Option[Int], objectTypeId: Int, suffix: String, description: Option[String],
+                            storageLocation: Option[Int], partOfLoan: Option[Int],
+                            assetTag: Option[String], status: ObjectStatus.Value, requiresSignature: Boolean = false)
+
+  case class ObjectEventData(objectId: Int, eventId: Int, storageId: Option[Int], reservedFor: Option[Int],
+                             plannedUse: Option[String] = None, depositPlace: Option[String] = None)
+
+  case class CompleteObject(`object`: SingleObjectJson, objectType: ObjectType,
                             partOfLoanObject: Option[CompleteExternalLoan],
                             reservedFor: Option[UserProfile] = None)
 
@@ -117,9 +122,8 @@ package object data {
   implicit val storageJson: Format[Storage] = Json.format[Storage]
   implicit val storageTreeJson: OFormat[StorageTree] = Json.format[StorageTree]
   implicit val typeJson: Format[ObjectType] = Json.format[ObjectType]
-  implicit val completeTypeJson: Format[CompleteObjectType] = Json.format[CompleteObjectType]
   implicit val completeTypeTreeJson: Format[ObjectTypeTree] = Json.format[ObjectTypeTree]
-  implicit val obj: OFormat[SingleObject] = Json.format[SingleObject]
+  implicit val obj: OFormat[SingleObjectJson] = Json.format[SingleObjectJson]
   implicit val complObj: Format[CompleteObject] = Json.format[CompleteObject]
   implicit val objLog: Format[ObjectLog] = Json.format[ObjectLog]
   implicit val complObjLog: Format[ObjectLogWithUser] = Json.format[ObjectLogWithUser]

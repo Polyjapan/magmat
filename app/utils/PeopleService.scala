@@ -5,6 +5,7 @@ import ch.japanimpact.auth.api.apitokens.APITokensService
 import com.google.inject.Inject
 import models.UsersModel
 import play.api.Configuration
+import play.api.libs.json.{Format, JsArray, JsNumber, Json, OFormat}
 import play.api.libs.ws.WSClient
 
 import scala.collection.mutable
@@ -79,5 +80,18 @@ class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: 
 
   def searchUsers(data: String): Future[Seq[UserProfile]] = users.searchUsers(data).map(_.toOption.getOrElse(Seq()))
 
+  implicit val profileMapper: OFormat[UserProfile] = Json.format[UserProfile]
+
+  def exportUsers: Future[JsArray] = {
+    updateIfNeeded().flatMap(staffIds => {
+      users.getAllUsers.map(_.toOption.getOrElse(Seq())).map(users => {
+        users.map(user => {
+          val json = Json.toJsObject(user)
+
+          staffIds.get(user.id).map(sn => json + ("staffNumber" -> JsNumber(sn))).getOrElse(json)
+        })
+      })
+    }).map(iter => JsArray(iter.toList))
+  }
 
 }

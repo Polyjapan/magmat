@@ -1,13 +1,13 @@
 package controllers
 
 import java.time.Clock
-
 import data._
+
 import javax.inject.Inject
 import models.ObjectTypesModel
 import play.api.Configuration
 import play.api.libs.json.Json
-import play.api.mvc.{AbstractController, ControllerComponents}
+import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
 import utils.AuthenticationPostfix._
 
 import scala.concurrent.ExecutionContext
@@ -16,12 +16,24 @@ import scala.concurrent.ExecutionContext
  * @author Louis Vialar
  */
 class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTypesModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
-  def getObjectTypes(eventId: Option[Int]) = Action.async { req =>
-    model.getAllByEvent(eventId).map(r => Ok(Json.toJson(r)))
+  def getObjectTypesTree(eventId: Option[Int]): Action[AnyContent] = Action.async { req =>
+    model.getObjectTypeTree(eventId).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def getObjectTypesTree(eventId: Option[Int]) = Action.async { req =>
-    model.getObjectTypeTree(eventId).map(r => Ok(Json.toJson(r)))
+  def createObjectType: Action[ObjectType] = Action.async(parse.json[ObjectType]) { req =>
+    model.create(req.body).map(opt => Ok(Json.toJson(opt)))
+  }.requiresAuthentication
+
+  def updateObjectType(id: Int): Action[ObjectType] = Action.async(parse.json[ObjectType]) { req =>
+    model.update(id, req.body.copy(None)).map(updated => Ok(Json.toJson(updated > 0)))
+  }.requiresAuthentication
+
+  def deleteObjectType(id: Int): Action[AnyContent] = Action.async { req =>
+    model.delete(req.eventIdOpt, id, req.user.userId).map(_ => Ok)
+  }.requiresAuthentication
+
+  /*def getObjectTypes(eventId: Option[Int]) = Action.async { req =>
+    model.getAllByEvent(eventId).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
   def getObjectTypesByLoan(loan: Int) = Action.async { req =>
@@ -38,18 +50,5 @@ class ObjectTypesController @Inject()(cc: ControllerComponents, model: ObjectTyp
 
   def getObjectType(id: Int) = Action.async { req =>
     model.getOne(id).map(r => Ok(Json.toJson(r)))
-  }.requiresAuthentication
-
-  def createObjectType = Action.async(parse.json[ObjectType]) { req =>
-    model.create(req.body).map(opt => Ok(Json.toJson(opt)))
-  }.requiresAuthentication
-
-  def updateObjectType(id: Int) = Action.async(parse.json[ObjectType]) { req =>
-    model.update(id, req.body.copy(None)).map(updated => Ok(Json.toJson(updated > 0)))
-  }.requiresAuthentication
-
-  def deleteObjectType(id: Int) = Action.async { req =>
-    model.delete(req.eventId, id, req.user.userId).map(_ => Ok)
-  }.requiresAuthentication
-
+  }.requiresAuthentication*/
 }

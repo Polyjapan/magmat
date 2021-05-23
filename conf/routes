@@ -8,44 +8,40 @@ GET           /login/:ticket                            controllers.LoginControl
 
 GET           /people/:id                               controllers.PeopleController.getPerson(id: String)
 GET           /people/search/:query                     controllers.PeopleController.searchPersons(query: String)
+GET           /people                                   controllers.PeopleController.exportUsers
 
 GET           /events/current                           controllers.EventsController.getEvent
 GET           /events                                   controllers.EventsController.getEvents
 GET           /events/switch/:id                        controllers.EventsController.switchEvent(id: Int)
 
-GET           /objects/types/                           controllers.ObjectTypesController.getObjectTypes(eventId: Option[Int] ?= None)
 GET           /objects/types/tree                       controllers.ObjectTypesController.getObjectTypesTree(eventId: Option[Int] ?= None)
-GET           /objects/types/by-loan/:loan              controllers.ObjectTypesController.getObjectTypesByLoan(loan: Int)
-GET           /objects/types/complete                   controllers.ObjectTypesController.getCompleteObjectTypes(eventId: Option[Int] ?= None)
-GET           /objects/types/:id                        controllers.ObjectTypesController.getObjectType(id: Int)
-GET           /objects/types/complete/:id               controllers.ObjectTypesController.getCompleteObjectType(id: Int)
 
 
-GET           /objects/                                 controllers.ObjectsController.getAll
-GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean], leftDepth: Option[Int] ?= None, rightDepth: Option[Int] ?= None)
-GET           /objects/complete                         controllers.ObjectsController.getAllComplete(room: Option[String] ?= None, space: Option[String] ?= None)
-GET           /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String)
+GET           /objects                                 controllers.ObjectsController.getAll(eventId: Option[Int] ?= None)
+GET           /objects/tidying                          controllers.ObjectsController.computeTidying(inverted: Option[Boolean], leftDepth: Option[Int] ?= None, rightDepth: Option[Int] ?= None, eventId: Option[Int] ?= None)
+GET           /objects/complete                         controllers.ObjectsController.getAllComplete(eventId: Option[Int] ?= None)
+GET           /objects/by-tag/:tag                      controllers.ObjectsController.getByTag(tag: String, eventId: Option[Int])
 GET           /objects/nextSuffix/:tpe                  controllers.ObjectsController.getNextSuffix(tpe: Int, prefix: Option[String])
-GET           /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int)
-GET           /objects/by-location/:loc                 controllers.ObjectsController.getByLocation(loc: Int)
+GET           /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int, eventId: Option[Int])
+GET           /objects/by-location/:loc                 controllers.ObjectsController.getByLocation(loc: Int, eventId: Option[Int])
 +nocsrf
 POST          /objects/                                 controllers.ObjectsController.createMultiple
-GET           /objects/by-type/complete/:tpe            controllers.ObjectsController.getByTypeComplete(tpe: Int)
-GET           /objects/by-location/complete/:loc        controllers.ObjectsController.getByLocationComplete(loc: Int)
+GET           /objects/by-type/complete/:tpe            controllers.ObjectsController.getByTypeComplete(tpe: Int, eventId: Option[Int] ?= None)
+GET           /objects/by-location/complete/:loc        controllers.ObjectsController.getByLocationComplete(loc: Int, eventId: Option[Int] ?= None)
 GET           /objects/by-loan/complete/:loc            controllers.ObjectsController.getByLoanComplete(loc: Int)
-GET           /objects/:id                              controllers.ObjectsController.getOne(id: Int)
+GET           /objects/:id                              controllers.ObjectsController.getOne(id: Int, eventId: Option[Int] ?= None)
 +nocsrf
-PUT           /objects/:id                              controllers.ObjectsController.updateOne(id: Int)
-GET           /objects/loanedTo/:user                   controllers.ObjectsController.getLoanedTo(user: Int)
-GET           /objects/loaned/                          controllers.ObjectsController.getLoaned
-GET           /objects/history/:user                    controllers.ObjectsController.getUserHistory(user: Int)
-GET           /objects/logs/:id                         controllers.ObjectsController.getLogs(id: Int)
-GET           /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int)
+PUT           /objects/:id                              controllers.ObjectsController.updateOne(id: Int, eventId: Option[Int] ?= None)
+GET           /objects/loanedTo/:user                   controllers.ObjectsController.getLoanedTo(user: Int, eventId: Option[Int] ?= None)
+GET           /objects/loaned/                          controllers.ObjectsController.getLoaned(eventId: Option[Int] ?= None)
+GET           /objects/history/:user                    controllers.ObjectsController.getUserHistory(user: Int, eventId: Option[Int] ?= None)
+GET           /objects/logs/:id                         controllers.ObjectsController.getLogs(id: Int, eventId: Option[Int] ?= None)
+GET           /objects/complete/:id                     controllers.ObjectsController.getOneComplete(id: Int, eventId: Option[Int] ?= None)
 +nocsrf
-PUT           /objects/state/:id                        controllers.ObjectsController.changeState(id: Int)
+PUT           /objects/state/:id                        controllers.ObjectsController.changeState(id: Int, eventId: Option[Int] ?= None)
 +nocsrf
-POST          /objects/comments/:id                     controllers.ObjectsController.postComment(id: Int)
-GET           /objects/comments/:id                     controllers.ObjectsController.getComments(id: Int)
+POST          /objects/comments/:id                     controllers.ObjectsController.postComment(id: Int, eventId: Option[Int] ?= None)
+GET           /objects/comments/:id                     controllers.ObjectsController.getComments(id: Int, eventId: Option[Int] ?= None)
 
 
 GET           /guests/                                  controllers.GuestsController.getAll

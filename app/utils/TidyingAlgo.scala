@@ -1,6 +1,6 @@
 package utils
 
-import data.{CompleteExternalLoan, CompleteObject, SingleObject, Storage, StorageTree}
+import data.{CompleteExternalLoan, CompleteObject, SingleObjectJson, Storage, StorageTree}
 import play.api.libs.json._
 
 object TidyingAlgo {
@@ -8,10 +8,10 @@ object TidyingAlgo {
 
   case class RecStorageTree[T](map: Map[StorageOrLoan, Either[T, RecStorageTree[T]]])
 
-  private type insideStorageTreeType = RecStorageTree[List[SingleObject]]
+  private type insideStorageTreeType = RecStorageTree[List[SingleObjectJson]]
 
-  private implicit val insideWriter: Writes[RecStorageTree[List[SingleObject]]] = writer[List[SingleObject]]
-  implicit val resultWriter: Writes[RecStorageTree[RecStorageTree[List[SingleObject]]]] = writer[RecStorageTree[List[SingleObject]]]
+  private implicit val insideWriter: Writes[RecStorageTree[List[SingleObjectJson]]] = writer[List[SingleObjectJson]]
+  implicit val resultWriter: Writes[RecStorageTree[RecStorageTree[List[SingleObjectJson]]]] = writer[RecStorageTree[List[SingleObjectJson]]]
 
   implicit def writer[T](implicit tWriter: Writes[T]): Writes[RecStorageTree[T]] = new Writes[RecStorageTree[T]] {
     override def writes(o: RecStorageTree[T]): JsValue = JsArray(o.map.toList.map {
@@ -36,13 +36,13 @@ object TidyingAlgo {
   }
 
 
-  def build(lst: List[ObjectWithLocationInfo], leftMapper: ObjectWithLocationInfo => StorageOrLoan, rightMapper: ObjectWithLocationInfo => StorageOrLoan)(maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObject]]] =
+  def build(lst: List[ObjectWithLocationInfo], leftMapper: ObjectWithLocationInfo => StorageOrLoan, rightMapper: ObjectWithLocationInfo => StorageOrLoan)(maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObjectJson]]] =
     buildStorageTree(lst, leftMapper, inCategory => buildStorageTree(inCategory, rightMapper, _.map(_.`object`), depth = maxDepthRight), depth = maxDepthLeft)
 
-  def fromConvToStorage(lst: List[ObjectWithLocationInfo], maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObject]]] =
+  def fromConvToStorage(lst: List[ObjectWithLocationInfo], maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObjectJson]]] =
     build(lst, _.conv.map(e => Left(e)), _.origin)(maxDepthLeft, maxDepthRight)
 
-  def fromStorageToConv(lst: List[ObjectWithLocationInfo], maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObject]]] =
+  def fromStorageToConv(lst: List[ObjectWithLocationInfo], maxDepthLeft: Int = -1, maxDepthRight: Int = -1): RecStorageTree[RecStorageTree[List[SingleObjectJson]]] =
     build(lst, _.origin, _.conv.map(e => Left(e)))(maxDepthLeft, maxDepthRight)
 
   def buildList(r: List[CompleteObject], allStorages: List[data.Storage]): List[ObjectWithLocationInfo] = {
@@ -98,5 +98,5 @@ object TidyingAlgo {
     ret
   }
 
-  case class ObjectWithLocationInfo(`object`: SingleObject, origin: StorageOrLoan, conv: Option[StorageTree])
+  case class ObjectWithLocationInfo(`object`: SingleObjectJson, origin: StorageOrLoan, conv: Option[StorageTree])
 }

@@ -8,24 +8,31 @@ import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
-class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, users: UsersModel)(implicit ec: ExecutionContext) {
+class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implicit ec: ExecutionContext) {
   // Don't forget to change the ObjectTypesModel.storageAliaser if you change the request.
-  val completeRequest =
+  val completeRequest: String =
     """SELECT * FROM (SELECT o.*,
-      |     IF(o.part_of_loan IS NULL, ot.part_of_loan, o.part_of_loan) AS actual_part_of_loan
-      |  FROM objects o
-      |LEFT JOIN object_types ot on o.object_type_id = ot.object_type_id) AS objects
-      |LEFT JOIN object_types ot on objects.object_type_id = ot.object_type_id
+      |        IF(o.part_of_loan IS NULL, ot.part_of_loan, o.part_of_loan) AS actual_part_of_loan
+      |        FROM objects o LEFT JOIN object_types ot on o.object_type_id = ot.object_type_id) AS objects
+      |LEFT JOIN object_types ot on ot.object_type_id = objects.object_type_id
       |LEFT JOIN external_loans el on objects.actual_part_of_loan = el.external_loan_id
       |LEFT JOIN guests e on el.guest_id = e.guest_id
       |""".stripMargin
 
-  implicit val parameterList: ToParameterList[SingleObject] = Macro.toParameters[SingleObject]()
-  implicit val objectParser: RowParser[SingleObject] = Macro.namedParser[SingleObject]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
+  val BeforeLen: Int = 3 + 12 // 12 columns in objects + the 3 magical ones we add
+
+  implicit val parameterList: ToParameterList[SingleObjectDB] = Macro.toParameters[SingleObjectDB]()
+  implicit val oedParameterList: ToParameterList[ObjectEventData] = Macro.toParameters[ObjectEventData]()
+  implicit val dbObjectParser: RowParser[SingleObjectDB] = Macro.namedParser[SingleObjectDB]((p: String) => "objects." + ColumnNaming.SnakeCase(p))
+  implicit val oedParser: RowParser[ObjectEventData] = Macro.namedParser[ObjectEventData]((p: String) => "objects_event_data." + ColumnNaming.SnakeCase(p))
+  private val db = dbApi database "default"
+  val objectParser: RowParser[SingleObjectJson] = (dbObjectParser ~ oedParser.?).map {
+    case sdb ~ oed =>
+      SingleObjectJson(sdb.objectId, sdb.objectTypeId, sdb.suffix, sdb.description, sdb.storageLocation, oed.flatMap(_.storageId),
+        sdb.partOfLoan, oed.flatMap(_.reservedFor), sdb.assetTag, sdb.status, oed.flatMap(_.plannedUse), oed.flatMap(_.depositPlace), sdb.requiresSignature)
+  }
   implicit val objectLogParser: RowParser[ObjectLog] = Macro.namedParser[ObjectLog]((p: String) => "object_logs." + ColumnNaming.SnakeCase(p))
   implicit val objectCommentParser: RowParser[ObjectComment] = Macro.namedParser[ObjectComment]((p: String) => "objects_comments." + ColumnNaming.SnakeCase(p))
-  val BeforeLen = 3 + 12 // 12 columns in objects + the 3 magical ones we add
-  private val db = dbApi database "default"
   private val completeObjectParser: RowParser[CompleteObject] = {
     val objectType = Macro.namedParser[ObjectType]((p: String) => "object_types." + ColumnNaming.SnakeCase(p))
     val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
@@ -37,27 +44,31 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     }
   }
 
-  def getAll: Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
-    SQL("SELECT * FROM objects WHERE status != 'DELETED'").as(objectParser.*)
+  def getAll(eventId: Option[Int]): Future[List[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
+    SQL(baseRequestForEvent(eventId)).as(objectParser.*)
   })
 
-  def getAllComplete(room: Option[String] = None, space: Option[String] = None): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    val whereClause = " WHERE objects.status != 'DELETED'" + {
-      if (room.isDefined) " AND (sl.room = {room} OR sl2.room = {room})" else ""
-    } + {
-      if (space.isDefined) " AND (sl.space = {space} OR sl2.space = {space})" else ""
-    }
+  def baseRequestForEvent(eventId: Option[Int] = None) = {
+    ("SELECT * FROM objects " +
+      "LEFT JOIN object_types ot ON ot.object_type_id = objects.object_type_id " +
+      "LEFT JOIN external_loans el ON external_loan_id = IF(objects.part_of_loan IS NULL, ot.part_of_loan, objects.part_of_loan)") +
+      eventId.map(id => s" LEFT JOIN objects_event_data oed ON oed.object_id = objects.object_id AND oed.event_id = $id")
+      .getOrElse("") + " WHERE objects.status != 'DELETED' AND (el.external_loan_id IS NULL " + eventId.map(id => s"OR el.event_id = $id) ").getOrElse(") ")
+  }
 
-    SQL(completeRequest + whereClause)
-      .on("room" -> room.getOrElse("none"), "space" -> space.getOrElse("none"))
+  def getAllComplete(event: Option[Int]): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    val whereClause = event.map(id => s"(el.event_id = $id or el.event_id is null)")
+      .getOrElse("el.event_id is null")
+
+    SQL(completeRequestForEvent(event) + " WHERE objects.status != 'DELETED' AND " + whereClause)
       .asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
-  def getAllByType(typeId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
+  def getAllByType(typeId: Int): Future[List[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE object_type_id = {id} AND status != 'DELETED'").on("id" -> typeId).as(objectParser.*)
   })
 
-  def getAllByLocation(locId: Int): Future[List[SingleObject]] = Future(db.withConnection { implicit connection =>
+  def getAllByLocation(locId: Int): Future[List[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
     SQL(
       """SELECT objects.* FROM objects JOIN object_types ot on objects.object_type_id = ot.object_type_id
         | WHERE (objects.inconv_storage_location = {loc}
@@ -79,7 +90,20 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     SQL(completeRequest + " WHERE objects.object_type_id = {id} AND objects.status != 'DELETED'").on("id" -> typeId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
-  def getOne(id: Int): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
+  private def collectReservedFor(objects: List[CompleteObject]): Future[List[CompleteObject]] = {
+    val reservedForSet = objects.flatMap(_.`object`.reservedFor).toSet
+
+    if (reservedForSet.isEmpty) {
+      Future.successful(objects)
+    } else {
+      users.getUsersWithIds(reservedForSet).map {
+        case Right(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.unapply)))
+        case Left(_) => objects
+      }
+    }
+  }
+
+  def getOne(id: Int): Future[Option[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE object_id = {id}").on("id" -> id).as(objectParser.singleOpt)
   })
 
@@ -122,7 +146,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
     }
   })
 
-  def getOneByAssetTag(tag: String): Future[Option[SingleObject]] = Future(db.withConnection { implicit connection =>
+  def getOneByAssetTag(tag: String): Future[Option[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
     SQL("SELECT * FROM objects WHERE asset_tag = {tag} LIMIT 1").on("tag" -> tag).as(objectParser.singleOpt)
   })
 
@@ -131,14 +155,32 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
 
-  def updateOne(id: Int, body: SingleObject) = Future(db.withConnection { implicit conn =>
-    val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "inconvStorageLocation", "partOfLoan", "reservedFor", "assetTag", "plannedUse", "depositPlace").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
+  def updateOne(id: Int, body: SingleObjectJson, eventId: Option[Int]) = Future(db.withConnection { implicit conn =>
+    val (obj, data) = (SingleObjectDB(Some(id), body.objectTypeId, body.suffix, body.description, body.storageLocation, body.partOfLoan, body.assetTag, body.status, body.requiresSignature),
+      eventId map (evId => ObjectEventData(id, evId, body.inconvStorageLocation, body.reservedFor, body.plannedUse, body.depositPlace))
+    )
 
-    SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(body.copy(objectId = Some(id))).executeUpdate()
+    {
+      val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "partOfLoan", "assetTag").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
+      SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(obj).executeUpdate()
+    }
+
+    data match {
+      case Some(data) =>
+        val fieldNames = List("storageId", "reservedFor", "plannedUse", "depositPlace")
+        val colNames = fieldNames.map(ColumnNaming.SnakeCase)
+        val sets = colNames.zip(fieldNames).map(pair => s"${pair._1} = {${pair._2}}").mkString(", ")
+        val rq = s"INSERT INTO objects_event_data(object_id, event_id, ${colNames.mkString(",")}) VALUES ({objectId}, {eventId}, ${fieldNames.map(v => s"{$v}").mkString(", ")}) ON DUPLICATE KEY UPDATE $sets "
+        SQL(rq).bind(data).executeUpdate()
+      case None =>
+    }
+
   })
 
-  def insertAll(obj: Array[SingleObject]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
-    val params1: List[Seq[NamedParameter]] = obj.toList.map(parameterList)
+  def insertAll(obj: Array[SingleObjectJson]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
+    val dbObj = obj.map { body => SingleObjectDB(None, body.objectTypeId, body.suffix, body.description, body.storageLocation, body.partOfLoan, body.assetTag, body.status, body.requiresSignature)}
+
+    val params1: List[Seq[NamedParameter]] = dbObj.toList.map(parameterList)
     val names1: List[String] = params1.head.map(_.name).toList
     val colNames = names1.map(ColumnNaming.SnakeCase) mkString ", "
     val placeholders = names1.map { n => s"{$n}" } mkString ", "
@@ -150,36 +192,29 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, events: EventsModel, user
       params1.tail: _*).execute()
   })
 
-  def getObjectsLoanedTo(user: Int) = Future(db.withConnection { implicit c =>
+  def getObjectsLoanedTo(user: Int, eventId: Option[Int]) = Future(db.withConnection { implicit c =>
     SQL("SELECT T.object_id FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND user = {user} AND target_state != 'DELETED'")
       .on("user" -> user)
       .as(SqlParser.scalar[Int].*)
-  }).map(objects => objects.map(getOneComplete))
+  }).map(objects => objects.map(id => getOneComplete(id, eventId)))
     .flatMap(objects => Future.foldLeft(objects)(List.empty[CompleteObject])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
 
-  def getOneComplete(id: Int): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE object_id = {id}").on("id" -> id)
+  def getOneComplete(id: Int, eventId: Option[Int]): Future[Option[CompleteObject]] = Future(db.withConnection { implicit connection =>
+    SQL(completeRequestForEvent(eventId) + " WHERE objects.object_id = {id}").on("id" -> id)
       .asTry(completeObjectParser.singleOpt, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(t => collectReservedFor(t.toList).map(_.headOption))
 
-  private def collectReservedFor(objects: List[CompleteObject]): Future[List[CompleteObject]] = {
-    val reservedForSet = objects.flatMap(_.`object`.reservedFor).toSet
-
-    if (reservedForSet.isEmpty) {
-      Future.successful(objects)
-    } else {
-      users.getUsersWithIds(reservedForSet).map {
-        case Right(idMap) => objects.map(o => o.copy(reservedFor = o.`object`.reservedFor.flatMap(idMap.unapply)))
-        case Left(_) => objects
-      }
-    }
+  def completeRequestForEvent(eventId: Option[Int] = None) = {
+    completeRequest + eventId
+      .map(id => s" LEFT JOIN objects_event_data oed ON oed.object_id = objects.object_id AND oed.event_id = $id LEFT JOIN storage ON oed.storage_id = storage.storage_id")
+      .getOrElse("")
   }
 
-  def getObjectsLoaned = Future(db.withConnection { implicit c =>
+  def getObjectsLoaned(eventId: Option[Int]) = Future(db.withConnection { implicit c =>
     SQL("SELECT T.object_id, user FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND target_state != 'DELETED'")
       .as((SqlParser.int("object_id") ~ SqlParser.int("user")).*)
   })
-    .map(objects => objects.map { case id ~ user => getOneComplete(id).map(obj => obj.map(o => (o, user))) })
+    .map(objects => objects.map { case id ~ user => getOneComplete(id, eventId).map(obj => obj.map(o => (o, user))) })
     .flatMap(objects => Future.foldLeft(objects)(List.empty[(CompleteObject, Int)])((lst, elem) => if (elem.isDefined) elem.get :: lst else lst))
 
   def getUserHistory(eventId: Int, id: Int): Future[List[ObjectLogWithObject]] = Future(db.withConnection { implicit connection =>
