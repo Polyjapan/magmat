@@ -2,6 +2,7 @@ import {Component, OnInit} from '@angular/core';
 import {ObjectsService} from '../../../services/objects.service';
 import {CompleteObject} from '../../../data/object';
 import {Observable} from 'rxjs';
+import {debounceTime} from 'rxjs/operators';
 
 @Component({
   selector: 'app-all-objects',
@@ -12,7 +13,8 @@ export class AllObjectsComponent implements OnInit {
   objects$: Observable<CompleteObject[]>;
 
   constructor(private objects: ObjectsService) {
-    this.objects$ = objects.getObjects();
+    // adding the debounce gives some time to the browser to render the page before the content arrives, making the experience more fluid
+    this.objects$ = objects.getObjects().pipe(debounceTime(200));
   }
 
   ngOnInit(): void {

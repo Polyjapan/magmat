@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {Observable} from 'rxjs';
-import {map, startWith} from 'rxjs/operators';
+import {filter, map, startWith} from 'rxjs/operators';
 import {FormControl} from '@angular/forms';
 import {normalizeString} from '../../../utils/normalize.string';
 
@@ -16,6 +16,8 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
   @Input() selectedObject: T;
   @Output() selectedChange = new EventEmitter<number>();
   @Output() selectedObjectChange = new EventEmitter<T>();
+
+  @Input() disabled = false;
 
   autoSelect = false;
 
@@ -58,11 +60,18 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
   }
 
   ngOnChanges(changes: SimpleChanges): void {
-    if (changes.selected && changes.selected.firstChange && this.possibleValues.length > 0) {
+    if (changes.selected && this.possibleValues.length > 0) {
       console.log('changes selected');
       this.externalChanges(changes.selected.currentValue);
-    } else if (changes.selectedObject && changes.selectedObject.firstChange && this.possibleValues.length > 0) {
-      this.externalChanges(this.getId(changes.selectedObject.currentValue as T));
+    } else if (changes.selectedObject && this.possibleValues.length > 0) {
+      console.log('changes selected');
+      this.externalChanges(changes.selectedObject?.currentValue ? this.getId(changes.selectedObject.currentValue as T) : undefined);
+    } else if (changes.disabled !== undefined) {
+      if (changes.disabled.currentValue === true) {
+        this.searchControl.disable();
+      } else {
+        this.searchControl.enable();
+      }
     }
   }
 
@@ -85,7 +94,7 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
     this.filteredValues = this.searchControl.valueChanges
       .pipe(
         startWith(''),
-        map(value => typeof value === 'string' ? value : value.name),
+        filter(ev => !ev || typeof ev === 'string'),
         map(name => {
           if (!name || name.trim().length === 0) return []
 
@@ -101,10 +110,15 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
             if (a[2].startsWith(name)) {
               if (!b[2].startsWith(name)) {
                 return -1
-              }
+              } else if (a[2].startsWith(name + ' ')) {
+                if (!b[2].startsWith(name + ' ')) return -1;
+              } else if (b[2].startsWith(name + ' ')) return 1;
             } else if (b[2].startsWith(name)) {
               return 1
             }
+
+            // TODO: why not add a "contains ' ' + search + ' '" for words in the middle
+
             return -(a.length - b.length)
           }).slice(0, 20).map(l => [l[0], l[1]]);
         })

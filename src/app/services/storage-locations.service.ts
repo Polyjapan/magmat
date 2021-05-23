@@ -85,15 +85,15 @@ export class StorageLocationsService {
     return this.storagesWithParents$.pipe(map(m => m.get(storage)));
   }
 
-  getStoragesWithParents(inevent?: boolean, eventId?: number): Observable<Map<number, StorageTree>> {
+  getStoragesWithParents(inevent?: boolean): Observable<Map<number, StorageTree>> {
     this.refreshIfNeeded();
-    if (inevent === undefined && eventId === undefined) {
+    if (inevent === undefined) {
       return this.storagesWithParents$;
     } else {
       return this.storagesWithParents$.pipe(map(m => {
         const copy = new Map<number, StorageTree>();
         m.forEach((elem, key) => {
-          if (elem.event === eventId || elem.event === undefined && inevent === false) {
+          if ((elem.event === undefined) === !inevent) {
             copy.set(key, elem);
           }
         });

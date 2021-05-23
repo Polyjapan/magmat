@@ -36,7 +36,7 @@ export class SelectStorageComponent extends AbstractSelectorComponent<StorageTre
   getPossibleValues(): Observable<StorageTree[]> {
     return this.service.getStoragesWithParents(this.inconv)
       .pipe(
-        map(m => Array.from(m.values()).filter(el => !this.excludeChildrenOf || !objectHasParentLocation(el, this.excludeChildrenOf))));
+        map(m => Array.from(m.values()).filter(el => (!this.excludeChildrenOf || !objectHasParentLocation(el, this.excludeChildrenOf)))));
   }
 
   getId(v: StorageTree): number {

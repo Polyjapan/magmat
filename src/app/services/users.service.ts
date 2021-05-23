@@ -43,6 +43,11 @@ export class UsersService {
     return this.users$;
   }
 
+  getUsersMap(): Observable<Map<number, UserProfile>> {
+    this.pullIfNeeded();
+    return this.usersById$;
+  }
+
   getUser(id: number): Observable<UserProfile> {
     this.pullIfNeeded();
 

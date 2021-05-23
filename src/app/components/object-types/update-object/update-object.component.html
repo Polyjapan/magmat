@@ -15,38 +15,43 @@
       <input matInput placeholder="Asset Tag (code barre)" required [(ngModel)]="object.object.assetTag" name="assetTag">
     </mat-form-field>
 
-    <app-select-object-type [(selectedObject)]="object.objectType"></app-select-object-type>
+    <app-select-object-type [(selectedObject)]="object.objectTypeAncestry"></app-select-object-type>
 
     <mat-form-field>
       <mat-label>Description (héritée par défaut de la catégorie)</mat-label>
-      <textarea matInput placeholder="{{object.objectType.description}}" [(ngModel)]="object.object.description" name="description"></textarea>
+      <textarea matInput placeholder="{{object.objectType.description ?? 'Aucune description'}}" [(ngModel)]="object.object.description" name="description"></textarea>
     </mat-form-field>
 
-    <h2>Aides-mémoire</h2>
-    <p>Ces champs vous permettent de retenir facilement quelques informations importantes pour l'objet. Sentez vous libre d'y inscrire ce que vous souhaitez.</p>
+    <ng-container *ngIf="event">
+      <h2>Aides-mémoire</h2>
+      <p>Ces champs vous permettent de retenir facilement quelques informations importantes pour l'objet. Sentez vous libre d'y inscrire ce que vous souhaitez.</p>
 
-    <mat-form-field>
-      <input matInput placeholder="Utilisation prévue" [(ngModel)]="object.object.plannedUse" name="plannedUse">
-    </mat-form-field>
+      <mat-form-field>
+        <input matInput placeholder="Utilisation prévue" [(ngModel)]="object.object.plannedUse" name="plannedUse">
+      </mat-form-field>
 
-    <mat-form-field>
-      <input matInput placeholder="Lieu de dépose"  [(ngModel)]="object.object.depositPlace" name="depositPlace">
-    </mat-form-field>
+      <mat-form-field>
+        <input matInput placeholder="Lieu de dépose"  [(ngModel)]="object.object.depositPlace" name="depositPlace">
+      </mat-form-field>
 
 
-    <app-select-user label="Objet réservé pour..." [(selected)]="object.object.reservedFor" [allowGuests]="false"></app-select-user>
+      <app-select-user label="Objet réservé pour..." [(selected)]="object.object.reservedFor" [allowGuests]="false"></app-select-user>
+    </ng-container>
 
     <h2>Rangement de l'objet</h2>
-    <p>Ces informations sont facultatives. Par défaut, l'objet hérite des informations de son <strong>type parent</strong>. Il est recommandé de ne pas modifier ces informations depuis ce formulaire, mais depuis le formulaire de déplacement rapide. A vos risques et périls...</p>
 
-    <app-select-storage [(selected)]="object.object.inconvStorageLocation" [inconv]="true" label="Lieu de rangement durant JI"></app-select-storage>
+    <app-select-storage *ngIf="event" [(selected)]="object.object.inconvStorageLocation" [inconv]="true" label="Lieu de stockage durant {{event.name}}"></app-select-storage>
 
-    <div fxLayout="row">
-      <app-select-storage fxFlex="1 1 40%" [(selected)]="object.object.storageLocation" [inconv]="false" label="Lieu de rangement hors JI"></app-select-storage>
+    <ng-template #noEvent>
+      <app-select-storage [(selected)]="object.object.storageLocation" [inconv]="false" label="Lieu de stockage"></app-select-storage>
+    </ng-template>
 
-      <p fxFlex="1 1 20%" style="text-align: center;"><b>OU</b></p>
+    <div fxLayout="row" *ngIf="event ; else noEvent">
+      <app-select-storage fxFlex="1 1 45%" [(selected)]="object.object.storageLocation" [inconv]="false" [disabled]="object.object.partOfLoan !== undefined" label="Lieu de stockage hors JI"></app-select-storage>
 
-      <app-select-loan fxFlex="1 1 40%" [(selected)]="object.object.partOfLoan"></app-select-loan>
+      <p fxFlex="1 1 10%" style="text-align: center;"><b>OU</b></p>
+
+      <app-select-loan fxFlex="1 1 45%" [(selected)]="object.object.partOfLoan" [disabled]="object.object.storageLocation !== undefined"></app-select-loan>
     </div>
 
     <br>
