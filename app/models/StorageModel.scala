@@ -65,18 +65,44 @@ class StorageModel @Inject()(dbApi: play.api.db.DBApi)(implicit ec: ExecutionCon
       .execute()
   })
 
+  def getOne(id: Int): Future[Option[Storage]] = Future(db.withConnection { implicit conn =>
+    SQL("SELECT * FROM storage WHERE storage_id = {id}").on("id" -> id).as(storageParser.singleOpt)
+  })
 
   // OLD STUFF BELOW
 
 
   // TODO
 
-  def moveItems(items: List[String], targetStorage: StorageLocation) = Future(db.withConnection { implicit conn =>
-    val field = if (targetStorage.inConv) "inconv_storage_location" else "storage_location"
+  def moveItems(items: List[String], moveAll: Boolean, targetStorage: Storage) = Future(db.withConnection { implicit conn =>
+    val itemIds = if (moveAll) {
+      val types = SQL("SELECT object_type_id FROM objects WHERE asset_tag IN ({tags})")
+        .on("tags" -> items)
+        .as(scalar[Int].*)
 
-    SQL(s"UPDATE objects SET $field = {storageId} WHERE asset_tag IN ({tags})")
-      .on("tags" -> items, "storageId" -> targetStorage.storageLocationId.get)
-      .executeUpdate()
+      SQL("SELECT object_id FROM objects WHERE object_type_id IN ({ids})")
+        .on("ids" -> types)
+        .as(scalar[Int].*)
+    } else {
+      SQL("SELECT object_id FROM objects WHERE asset_tag IN ({tags})")
+        .on("tags" -> items)
+        .as(scalar[Int].*)
+    }
+
+    if (targetStorage.event.nonEmpty) {
+      val namedParameters: Seq[Seq[NamedParameter]] = itemIds
+          .map(id => Seq(NamedParameter("oid", id), NamedParameter("eid", targetStorage.event.get), NamedParameter("sid", targetStorage.storageId.get)))
+
+      val values = namedParameters.tail.map(_.map(_.value))
+
+      BatchSql(s"INSERT INTO objects_event_data(object_id, event_id, storage_id) VALUES ({oid}, {eid}, {sid}) ON DUPLICATE KEY UPDATE storage_id = {sid}", namedParameters.head)
+        .addBatchParamsList(values)
+        .execute()
+    } else {
+      SQL(s"UPDATE objects SET storage_location = {storageId} WHERE objects.object_id IN ({ids})")
+        .on("ids" -> itemIds, "storageId" -> targetStorage.storageId.get)
+        .executeUpdate()
+    }
   })
 
   def moveItemTypes(items: List[String], moveAll: Boolean, targetStorage: StorageLocation) = Future(db.withConnection { implicit conn =>

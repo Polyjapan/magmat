@@ -14,6 +14,11 @@ object SqlUtils {
    * @return the id of the inserted item
    */
   def insertOne[T](table: String, item: T)(implicit parameterList: ToParameterList[T], conn: Connection): Int = {
+    insertOneNoId(table, item).get
+  }
+
+  def insertOneNoId[T](table: String, item: T)(implicit parameterList: ToParameterList[T], conn: Connection): Option[Int] = {
+
     val params: Seq[NamedParameter] = parameterList(item);
     val names: List[String] = params.map(_.name).toList
     val colNames = names.map(ColumnNaming.SnakeCase) mkString ", "
@@ -21,6 +26,6 @@ object SqlUtils {
 
     SQL("INSERT INTO " + table + "(" + colNames +") VALUES (" + placeholders + ")")
       .bind(item)
-      .executeInsert(scalar[Int].single)
+      .executeInsert(scalar[Int].singleOpt)
   }
 }

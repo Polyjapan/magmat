@@ -152,7 +152,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
     model.getAllByLoanComplete(id).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
 
-  def createMultiple: Action[Array[SingleObjectJson]] = Action.async(parse.json[Array[SingleObjectJson]]) { req =>
+  def createMultiple(eventId: Option[Int]): Action[Array[SingleObjectJson]] = Action.async(parse.json[Array[SingleObjectJson]]) { req =>
     val tags = req.body.flatMap(obj => obj.assetTag)
 
     val existingTags = Future.foldLeft(tags.toList.map(tag => model.getOneByAssetTag(tag).map(opt => (opt, tag))))(List.empty[String])((lst, elem) => if (elem._1.isDefined) elem._2 :: lst else lst)
@@ -162,7 +162,7 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       val (toInsert, notInserted) = req.body.partition(elem => elem.assetTag.isEmpty || !existingTagsSet(elem.assetTag.get))
 
       if (toInsert.nonEmpty) {
-        model.insertAll(toInsert).map(res => (res zip toInsert)
+        model.insertAll(toInsert, eventId).map(res => (res zip toInsert)
           .map { case (id, obj) => obj.copy(objectId = Some(id)) })
           .map(inserted => Ok(Json.obj("inserted" -> inserted, "notInserted" -> notInserted)))
       } else {

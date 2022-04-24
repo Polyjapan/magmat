@@ -25,7 +25,7 @@ GET           /objects/nextSuffix/:tpe                  controllers.ObjectsContr
 GET           /objects/by-type/:tpe                     controllers.ObjectsController.getByType(tpe: Int, eventId: Option[Int])
 GET           /objects/by-location/:loc                 controllers.ObjectsController.getByLocation(loc: Int, eventId: Option[Int])
 +nocsrf
-POST          /objects/                                 controllers.ObjectsController.createMultiple
+POST          /objects/                                 controllers.ObjectsController.createMultiple(eventId: Option[Int] ?= None)
 GET           /objects/by-type/complete/:tpe            controllers.ObjectsController.getByTypeComplete(tpe: Int, eventId: Option[Int] ?= None)
 GET           /objects/by-location/complete/:loc        controllers.ObjectsController.getByLocationComplete(loc: Int, eventId: Option[Int] ?= None)
 GET           /objects/by-loan/complete/:loc            controllers.ObjectsController.getByLoanComplete(loc: Int)

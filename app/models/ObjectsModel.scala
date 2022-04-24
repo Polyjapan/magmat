@@ -3,6 +3,7 @@ package models
 import anorm.Macro.ColumnNaming
 import anorm._
 import data._
+import utils.SqlUtils
 
 import javax.inject.{Inject, Singleton}
 import scala.concurrent.{ExecutionContext, Future}
@@ -161,7 +162,7 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
     )
 
     {
-      val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "partOfLoan", "assetTag").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
+      val colNames = List("objectTypeId", "suffix", "description", "storageLocation", "partOfLoan", "assetTag", "requiresSignature").map(name => s"${ColumnNaming.SnakeCase(name)} = {$name}") mkString ", "
       SQL(s"UPDATE objects SET $colNames WHERE object_id = {objectId}").bind(obj).executeUpdate()
     }
 
@@ -177,19 +178,29 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
 
   })
 
-  def insertAll(obj: Array[SingleObjectJson]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
-    val dbObj = obj.map { body => SingleObjectDB(None, body.objectTypeId, body.suffix, body.description, body.storageLocation, body.partOfLoan, body.assetTag, body.status, body.requiresSignature)}
+  def insertAll(obj: Array[SingleObjectJson], event: Option[Int]): Future[Array[Int]] = Future(db.withConnection { implicit conn =>
+    event match {
+      case Some(eventId) =>
+        obj map { body =>
+          val elem = SingleObjectDB(None, body.objectTypeId, body.suffix, body.description, body.storageLocation, body.partOfLoan, body.assetTag, body.status, body.requiresSignature)
+          val id = SqlUtils.insertOne("objects", elem)
+          val elem2 = ObjectEventData(id, eventId, body.inconvStorageLocation, body.reservedFor, body.plannedUse, body.depositPlace)
+          SqlUtils.insertOneNoId("objects_event_data", elem2)
+          id
+        }
+      case None =>
+        // Use batchSQL (faster)
+        val dbObj = obj.map { body => SingleObjectDB(None, body.objectTypeId, body.suffix, body.description, body.storageLocation, body.partOfLoan, body.assetTag, body.status, body.requiresSignature)}
+        val params1: List[Seq[NamedParameter]] = dbObj.toList.map(parameterList)
+        val names1: List[String] = params1.head.map(_.name).toList
+        val colNames = names1.map(ColumnNaming.SnakeCase) mkString ", "
+        val placeholders = names1.map { n => s"{$n}" } mkString ", "
 
-    val params1: List[Seq[NamedParameter]] = dbObj.toList.map(parameterList)
-    val names1: List[String] = params1.head.map(_.name).toList
-    val colNames = names1.map(ColumnNaming.SnakeCase) mkString ", "
-    val placeholders = names1.map { n => s"{$n}" } mkString ", "
-
-
-    BatchSql(
-      s"INSERT INTO objects($colNames) VALUES($placeholders)",
-      params1.head,
-      params1.tail: _*).execute()
+        BatchSql(
+          s"INSERT INTO objects($colNames) VALUES($placeholders)",
+          params1.head,
+          params1.tail: _*).execute()
+    }
   })
 
   def getObjectsLoanedTo(user: Int, eventId: Option[Int]) = Future(db.withConnection { implicit c =>

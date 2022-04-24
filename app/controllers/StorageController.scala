@@ -37,23 +37,16 @@ class StorageController @Inject()(cc: ControllerComponents, storage: StorageMode
     storage.delete(id).map(opt => Ok(Json.toJson(opt)))
   }.requiresAuthentication
 
-  def moveItems(targetStorage: Int) = TODO
-  /*
-  def moveItems(targetStorage: Int) = Action.async(parse.json(8000)) { req =>
+   def moveItems(targetStorage: Int) = Action.async(parse.json(8000)) { req =>
     val items = (req.body \ "items").as[List[String]].map(_.trim).filter(_.nonEmpty)
-    val moveType = (req.body \ "moveType").as[Boolean]
-    val moveAll = moveType && (req.body \ "moveAll").as[Boolean]
+    val moveAll = (req.body \ "moveAll").as[Boolean]
 
     if (items.isEmpty) Future(BadRequest)
     else storage.getOne(targetStorage).flatMap {
       case Some(storageLocation) =>
-        (if (moveType) {
-          storage.moveItemTypes(items, moveAll, storageLocation)
-        } else {
-          storage.moveItems(items, storageLocation)
-        }).map(res => Ok)
+        storage.moveItems(items, moveAll, storageLocation).map(res => Ok)
       case None => Future(NotFound)
     }
   }.requiresAuthentication
-   */
+
 }
