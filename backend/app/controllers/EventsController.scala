@@ -35,7 +35,8 @@ class EventsController @Inject()(cc: ControllerComponents, model: EventsModel)(i
   def switchEvent(id: Int): Action[AnyContent] = Action { implicit rq =>
     val session = JwtSession() + ("user", rq.user)
     val newSession: JwtSession =
-      if (id == 0) session else session + ("event", id)
+      if (id == 0) session - "event"
+      else session + ("event", id)
 
     Ok(Json.toJson(Json.obj("session" -> newSession.serialize)))
   }.requiresAuthentication
