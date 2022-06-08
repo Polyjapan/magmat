@@ -1,9 +1,9 @@
 import sbt.Keys.{libraryDependencies, resolvers}
 
-lazy val root = (project in file("."))
+lazy val MagmatBackend = (project in file("."))
   .enablePlugins(PlayScala, JavaServerAppPackaging, DockerPlugin)
   .settings(
-    name := "ji-inventory",
+    name := "MagmatBackend",
     version := "1.3",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(jdbc, evolutions, ehcache, ws, specs2 % Test, guice),
@@ -39,12 +39,12 @@ lazy val root = (project in file("."))
           "-DapplyEvolutions.default=true"
       ),
 
-      dockerExposedPorts := Seq(80),
-      dockerUsername := Some("polyjapan"),
-      dockerBaseImage := "openjdk:11",
 
-
-      // Don't add the doc in the zip
-      publishArtifact in(Compile, packageDoc) := false
+    Docker / dockerRepository := Some("registry.japan-impact.ch"),
+    Docker / packageName := "magmat-backend",
+    dockerBaseImage := "openjdk:11",
+    dockerUpdateLatest := true,
+    // Don't add the doc in the zip
+    publishArtifact in(Compile, packageDoc) := false
   )
 
