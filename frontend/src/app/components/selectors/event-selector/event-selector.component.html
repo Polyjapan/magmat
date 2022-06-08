@@ -1,0 +1,24 @@
+<button mat-button [matMenuTriggerFor]="menu" *ngIf="events$ | async ; else loadingEventList">
+
+  <ng-container *ngIf="event ; else noEvent">
+    <ng-container *ngIf="event | async as ev; else loading">
+      <ng-container *ngIf="ev ; else eventEmpty">{{ev.name}}</ng-container>
+      <ng-template #eventEmpty>Aucun événement sélectionné</ng-template>
+    </ng-container>
+    <ng-template #loading>Aucun événement sélectionné</ng-template>
+  </ng-container>
+
+  <ng-template #noEvent>Choisir un événement</ng-template>
+
+  <mat-icon>expand_more</mat-icon>
+</button>
+
+<ng-template #loadingEventList>
+  <span>Loading event list...</span>
+</ng-template>
+
+
+<mat-menu #menu="matMenu">
+  <button mat-menu-item (click)="switch(ev.id)" *ngFor="let ev of events$ | async">{{ev.name}}</button>
+  <button mat-menu-item (click)="switch(0)">Hors événement</button>
+</mat-menu>

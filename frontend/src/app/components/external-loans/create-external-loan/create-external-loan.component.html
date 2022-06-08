@@ -1,0 +1,47 @@
+<mat-spinner *ngIf="!loan || !eventId"></mat-spinner>
+
+<ng-container *ngIf="loan && eventId">
+  <h1>{{isUpdate ? 'Modifier':'Créer'}} un emprunt extérieur</h1>
+
+  <p *ngIf="!isUpdate">Cette page permet de créer un emprunt extérieur. Vous pourrez ensuite ajouter dedans des types d'objets, et rapidement scanner les objets
+  lors de la récupération du prêt.</p>
+
+  <form #form="ngForm">
+    <h2>Informations sur le prêt</h2>
+
+    <app-select-lender [(selected)]="loan.guestId" [allowCreation]="true" (selectedLenderChange)="lender = $event"></app-select-lender>
+
+    <mat-form-field>
+      <mat-label>Titre du prêt</mat-label>
+      <input matInput name="loanTitle" [(ngModel)]="loan.loanTitle" required [placeholder]="lender ? lender.name : undefined">
+    </mat-form-field>
+
+    <mat-form-field>
+      <mat-label>Description et détails sur le prêt</mat-label>
+      <textarea matInput placeholder="Attendu: 4 ordinateurs + 4 chargeurs" name="details" [(ngModel)]="loan.loanDetails"></textarea>
+    </mat-form-field>
+
+    <app-select-datetime [(selected)]="loan.pickupTime" label="Prise"></app-select-datetime>
+
+    <mat-form-field>
+      <mat-label>Lieu de prise (facultatif)</mat-label>
+      <input matInput name="pickupPlace" [(ngModel)]="loan.pickupPlace" [placeholder]="lender ? lender.location : undefined">
+    </mat-form-field>
+
+    <app-select-datetime [(selected)]="loan.returnTime" label="Retour"></app-select-datetime>
+
+    <mat-form-field>
+      <mat-label>Lieu de retour (facultatif)</mat-label>
+      <input matInput name="returnPlace" [(ngModel)]="loan.returnPlace" [placeholder]="lender ? lender.location : undefined">
+    </mat-form-field> <!-- todo: afficher par défaut les infos de la location -->
+
+    <br>
+
+    <div fxLayout="row" fxLayoutGap="5%" fxLayoutAlign="center center">
+      <button (click)="submit('see')" fxFlex="1 1 30%" type="submit" mat-raised-button color="warn" [disabled]="!isValid || sending">Créer et afficher</button>
+      <button (click)="submit('edit-new')" fxFlex="1 1 30%" type="submit" mat-raised-button color="accent" [disabled]="!isValid || sending">Créer et rester sur cette page</button>
+    </div>
+
+  </form>
+
+</ng-container>

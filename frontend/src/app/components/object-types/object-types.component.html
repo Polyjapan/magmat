@@ -1,0 +1,27 @@
+
+<div fxLayout="row" fxLayout.lt-md="column">
+  <div fxFlex>
+    <h1 style="margin-top: 8px;">Catégories d'objets</h1>
+  </div>
+  <div fxFlex>
+    <app-select-object-type label="Accès rapide..." (selectedChange)="goTo($event)"></app-select-object-type>
+  </div>
+</div>
+
+<mat-card>
+  <mat-card-content>
+    <div style="position: fixed; bottom: 1em; right: 1em; opacity: 1; z-index: 1;">
+      <button mat-fab (click)="create()" type="button" color="primary"><mat-icon>add</mat-icon></button>
+      <button mat-fab (click)="refresh()" type="button" color="primary" style="margin-left: .5em"><mat-icon>refresh</mat-icon></button>
+    </div>
+
+    <ng-template #loading>
+      <mat-spinner></mat-spinner>
+    </ng-template>
+
+    <ng-container *ngIf="objectTypes$ | async ; let ot; else loading">
+      <app-object-type-tree [trees]="ot" style="margin-left: 2em;"></app-object-type-tree>
+    </ng-container>
+
+  </mat-card-content>
+</mat-card>

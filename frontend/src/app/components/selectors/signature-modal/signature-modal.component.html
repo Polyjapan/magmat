@@ -1,0 +1,14 @@
+<h2 mat-dialog-title>Signature requise</h2>
+
+<mat-dialog-content>
+  <p>Votre signature est requise pour poursuivre cette action. Merci de bien vouloir signer ci dessous avant de valider.</p>
+
+  <p><b>Action signée : </b> {{displayAction}}</p>
+
+  <app-signing-area (signature)="signature = $event"></app-signing-area>
+
+</mat-dialog-content>
+
+<mat-dialog-actions>
+  <button style="width: 100%;" mat-stroked-button [disabled]="!signature" (click)="validate()"><mat-icon>check</mat-icon> Valider</button>
+</mat-dialog-actions>

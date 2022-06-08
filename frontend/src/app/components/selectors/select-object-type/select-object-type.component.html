@@ -1,0 +1,15 @@
+<mat-form-field *ngIf="types" style="width: 100%;">
+  <mat-label>{{label ? label : 'Choisissez une catégorie d\'objet...' }}</mat-label>
+  <input type="text" matInput [formControl]="objectTypeSearchControl" (ngModelChange)="onValueChange($event)" name="selected" [matAutocomplete]="auto">
+
+  <mat-autocomplete #auto="matAutocomplete"
+                    [displayWith]="displayFunc"
+                    (optionSelected)="onValueChange($event.option.value)">
+
+    <mat-option *ngFor="let tpe of filteredTypes | async" [value]="tpe">{{displayFunc(tpe)}}</mat-option>
+  </mat-autocomplete>
+
+
+</mat-form-field>
+
+<mat-progress-bar mode="indeterminate" *ngIf="!types"></mat-progress-bar>

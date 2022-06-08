@@ -1,0 +1,14 @@
+<mat-form-field style="width: 100%;">
+  <mat-label>{{ label ? label : defaultLabel }}</mat-label>
+  <input type="text" matInput [formControl]="searchControl" (ngModelChange)="onValueChange($event)" name="selected" [matAutocomplete]="auto">
+
+  <mat-autocomplete #auto="matAutocomplete"
+                    [displayWith]="displayValue"
+                    (optionSelected)="onValueChange($event.option.value)"
+                    [autoActiveFirstOption]="autoSelect">
+    <mat-option *ngFor="let location of filteredValues | async"
+                [value]="location">{{displayValue(location)}}</mat-option>
+  </mat-autocomplete>
+
+  <mat-error>Aucune entrée correspondante trouvée.</mat-error>
+</mat-form-field>

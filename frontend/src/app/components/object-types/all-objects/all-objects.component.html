@@ -1,0 +1,7 @@
+<h1>Tous les objets</h1>
+
+<ng-container *ngIf="!(objects$ | async)">
+  <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+</ng-container>
+
+<app-objects-list [objects]="(objects$ | async) ?? []"></app-objects-list>

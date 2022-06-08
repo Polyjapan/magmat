@@ -1,0 +1,54 @@
+<mat-toolbar role="heading" color="primary">
+  <button
+    type="button"
+    aria-label="Toggle sidenav"
+    mat-icon-button
+    (click)="drawer.toggle()"
+    *ngIf="isLoggedIn && (isHandset$ | async)">
+    <mat-icon *ngIf="isLoggedIn" aria-label="Side nav toggle icon">menu</mat-icon>
+  </button>
+
+  <a *ngIf="!(isHandset$ | async)" mat-button [routerLink]="['/']">Inventaire Japan Impact</a>
+
+  <app-event-selector *ngIf="isLoggedIn"></app-event-selector>
+
+
+  <span class="spacer"></span>
+
+  <button *ngIf="isLoggedIn" mat-button (click)="logout()">
+    <span *ngIf="!(isHandset$ | async)">Déconnexion</span>
+    <mat-icon>exit_to_app</mat-icon>
+  </button>
+</mat-toolbar>
+
+<mat-sidenav-container style="min-height: calc(100% - /* hardcoded toolbar size */ 64px);">
+
+
+  <mat-sidenav #drawer class="sidenav"
+               style="min-width: 15%;"
+               [attr.role]="(isHandset$ | async) ? 'dialog' : 'navigation'"
+               [mode]="(isHandset$ | async) ? 'over' : 'side'"
+               [opened]="isLoggedIn && ((isHandset$ | async) === false)">
+
+    <app-sidebar [url]="subUrl"></app-sidebar>
+  </mat-sidenav>
+
+  <mat-sidenav-content>
+    <div style="margin: 16px;">
+      <router-outlet #outlet="outlet" (activate)="activateRoute($event, outlet)"></router-outlet>
+    </div>
+    <!--
+    removed because useless
+        <div fxLayout fxLayoutAlign="center" fxLayoutGap="20px" style="margin: 16px;">
+
+      <div fxFlex="1 1 98%">
+        <router-outlet #outlet="outlet" (activate)="activateRoute($event, outlet)"></router-outlet>
+        <br>
+        <br>
+      </div>
+      -->
+  </mat-sidenav-content>
+</mat-sidenav-container>
+
+
+

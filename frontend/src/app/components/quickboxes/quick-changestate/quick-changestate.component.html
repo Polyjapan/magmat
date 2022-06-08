@@ -1,0 +1,68 @@
+<ng-container [ngSwitch]="object.object.status">
+  <p *ngSwitchCase="ObjectStatus.IN_STOCK">
+    L'objet est en stock. Indiquez un utilisateur pour ouvrir un prêt.
+  </p>
+  <p *ngSwitchCase="ObjectStatus.LOST">
+    L'objet est noté comme perdu. Indiquez l'utilisateur ayant ramené l'objet pour clore la perte.
+  </p>
+  <p *ngSwitchCase="ObjectStatus.OUT">
+    L'objet est noté comme en prêt. Indiquez l'utilisateur pour clore le prêt, déclarer une perte, ou indiquer un dépot.
+  </p>
+  <p *ngSwitchCase="ObjectStatus.RESTING">
+    L'objet est noté comme déposé quelque part. Indiquez l'utilisateur pour clore le prêt ou déclarer la récupération.
+  </p>
+  <p *ngSwitchCase="ObjectStatus.DELETED">
+    L'objet est noté comme remisé (supprimé). Impossible d'agir.
+  </p>
+</ng-container>
+
+<ng-container *ngIf="object.object.status !== ObjectStatus.DELETED">
+
+  <p *ngIf="object.object.requiresSignature"><b><mat-icon>warning</mat-icon> ATTENTION : </b>Une signature est requise pour prêter l'objet. Ne laissez pas partir la personne avant d'avoir la signature.</p>
+  <p *ngIf="object.reservedFor"><mat-icon>information</mat-icon> Cet objet est noté comme réservé à <b>{{object.reservedFor.details.firstName}} {{object.reservedFor.details.lastName}}</b>.</p>
+
+  <form>
+    <app-select-user #selectUserComponent (selectedUser)="lendTo = $event" [allowGuests]="false"></app-select-user>
+
+    <ng-container *ngIf="lendTo">
+      <ng-container [ngSwitch]="object.object.status">
+        <ng-container *ngSwitchCase="ObjectStatus.IN_STOCK">
+          <button [disabled]="sending" type="submit" (click)="declareLoaned()" mat-stroked-button
+                  color="accent" style="width: 100%;">Ouvrir un prêt
+          </button>
+        </ng-container>
+        <ng-container *ngSwitchCase="ObjectStatus.LOST">
+          <button [disabled]="sending" type="submit" (click)="declareLoaned()" mat-stroked-button
+                  color="accent" style="width: 50%;">Déclarer retrouvé et prêter
+          </button>
+          <button [disabled]="sending" type="submit" (click)="declareInStock()" mat-stroked-button
+                  style="width: 50%;">Déclarer retrouvé et stocker
+          </button>
+        </ng-container>
+        <ng-container *ngSwitchCase="ObjectStatus.OUT">
+          <button [disabled]="sending" type="submit" (click)="declareInStock()" mat-stroked-button
+                  color="accent" style="width: 50%;">Fermer le prêt
+          </button>
+          <button [disabled]="sending" type="submit" (click)="declareLoaned()" mat-stroked-button
+                  color="primary" style="width: 50%;">Transférer le prêt
+          </button>
+          <button [disabled]="sending" type="submit" (click)="declareResting()" mat-stroked-button
+                  style="width: 50%;">Déposer quelque part
+          </button>
+          <button [disabled]="sending" type="submit" (click)="declareLost()" mat-stroked-button
+                  color="warn" style="width: 50%;">Déclarer perdu
+          </button>
+        </ng-container>
+        <ng-container *ngSwitchCase="ObjectStatus.RESTING">
+          <button [disabled]="sending" type="submit" (click)="declareInStock()" mat-stroked-button
+                  color="accent" style="width: 50%;">Fermer le prêt
+          </button>
+          <button [disabled]="sending" type="submit" (click)="declareLoaned()" mat-stroked-button
+                  style="width: 50%;">Récupérer
+          </button>
+        </ng-container>
+      </ng-container>
+    </ng-container>
+  </form>
+
+</ng-container>

@@ -1,0 +1,40 @@
+<h1>Liste des prêts pour un utilisateur</h1>
+
+<p>Indiquez un numéro d'utilisateur ci dessous pour commencer la recherche.</p>
+
+<app-select-user style="width: 100%;" (selectedUser)="onSelect($event)" [allowGuests]="false"></app-select-user>
+
+<ng-container *ngIf="selectedUser">
+  <h2>Résultats pour {{selectedUser.details.firstName}} {{selectedUser.details.lastName}} :</h2>
+
+  <h3>Objets actuellement prêtés</h3>
+  <mat-spinner *ngIf="!loans"></mat-spinner>
+  <app-objects-list *ngIf="loans" [objects]="loans"></app-objects-list>
+
+  <h3>Logs complets de l'utilisateur</h3>
+  <mat-spinner *ngIf="!history"></mat-spinner>
+  <table mat-table [dataSource]="history" *ngIf="history" class="mat-elevation-z4" style="width: 100%;">
+    <ng-container matColumnDef="timestamp">
+      <th mat-header-cell *matHeaderCellDef> Heure</th>
+      <td mat-cell *matCellDef="let elem"> {{dateFormat(elem)}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="source">
+      <th mat-header-cell *matHeaderCellDef> Ancien état</th>
+      <td mat-cell *matCellDef="let elem"> {{statusToString(elem.objectLog.sourceState)}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="target">
+      <th mat-header-cell *matHeaderCellDef> Nouvel état</th>
+      <td mat-cell *matCellDef="let elem"> {{statusToString(elem.objectLog.targetState)}} </td>
+    </ng-container>
+
+    <ng-container matColumnDef="object">
+      <th mat-header-cell *matHeaderCellDef> Objet</th>
+      <td mat-cell *matCellDef="let elem"><b>{{elem.object.assetTag}}</b> {{elem.objectType.name}} {{elem.object.suffix}} <button mat-icon-button [routerLink]="['/', 'objects', elem.object.objectId]"><mat-icon>folder_open</mat-icon></button></td>
+    </ng-container>
+
+    <tr mat-header-row *matHeaderRowDef="['timestamp', 'source', 'target', 'object']"></tr>
+    <tr mat-row *matRowDef="let row; columns: ['timestamp', 'source', 'target', 'object'];"></tr>
+  </table>
+</ng-container>

@@ -1,0 +1,49 @@
+<mat-nav-list>
+
+  <h3 matSubheader>Inventaire</h3>
+  <a mat-list-item [class.active]="subUrl === ''" [routerLink]="['.']">
+    <mat-icon>home</mat-icon>
+    Homepage</a>
+  <a mat-list-item [class.active]="subUrl === 'objects'" [routerLink]="['objects']">
+    <mat-icon>emoji_objects</mat-icon>
+    Tous les objets</a>
+  <a mat-list-item [class.active]="subUrl === 'object-types'" [routerLink]="['object-types']">
+    <mat-icon>category</mat-icon>
+    Catégories d'objets</a>
+  <a mat-list-item [class.active]="subUrl === 'storages'" [routerLink]="['storages']">
+    <mat-icon>storage</mat-icon>
+    Stockages</a>
+
+  <a mat-list-item [class.active]="subUrl === 'objects-out'" [routerLink]="['objects-out']">
+    <mat-icon>call_made</mat-icon>
+    Objets en prêt</a>
+
+  <mat-divider></mat-divider>
+  <h3 matSubheader>Utilisateurs et emprunts</h3>
+  <a mat-list-item [class.active]="subUrl === 'guests'" [routerLink]="['guests']">
+    <mat-icon>no_accounts</mat-icon>
+    Utilisateurs invités</a>
+  <a mat-list-item *ngIf="inEvent | async" [class.active]="subUrl === 'external-loans'" [routerLink]="['external-loans']">
+    <mat-icon>call_received</mat-icon>
+    Objets empruntés</a>
+
+  <a mat-list-item [class.active]="subUrl === 'user-logs'" [routerLink]="['user-logs']">
+    <mat-icon>swap_horiz</mat-icon>
+    Historique par utilisateur</a>
+  <mat-divider></mat-divider>
+
+  <ng-container *ngIf="inEvent | async">
+
+    <h3 matSubheader>Rangement</h3>
+    <a mat-list-item [class.active]="subUrl === 'returns'" [routerLink]="['returns']">
+      <mat-icon>calendar_today</mat-icon>
+      Rendus externes</a>
+    <a mat-list-item [class.active]="subUrl === 'tidying'" [routerLink]="['tidying']">
+      <mat-icon>archive</mat-icon>
+      Aide au rangement</a>
+  </ng-container>
+
+  <!--<a mat-list-item [class.active]="subUrl === 'staffs'" [routerLink]="['staffs']">
+    <mat-icon>event_seat</mat-icon>
+    Événements</a>-->
+</mat-nav-list>

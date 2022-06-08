@@ -1,0 +1,37 @@
+<ng-template #loading>
+  <mat-spinner></mat-spinner>
+</ng-template>
+
+<ng-template #user>
+  <ng-container *ngIf="user$ | async as user ; else loading">
+    <h1>Utilisateur #{{user.id}} : {{user.email}}</h1>
+
+    <mat-card>
+      <mat-card-title>Informations sur l'utilisateur</mat-card-title>
+      <ul>
+        <li><b>Type :</b> Utilisateur CAS</li>
+        <li><b>ID :</b> {{user.id}}</li>
+        <li><b>Email :</b> {{user.email}}</li>
+        <li><b>Nom :</b> {{user.details.firstName}} {{user.details.lastName}}</li>
+        <li *ngIf="user.details.phoneNumber"><b>Téléphone :</b> {{user.details.phoneNumber}}</li>
+      </ul>
+    </mat-card>
+  </ng-container>
+</ng-template>
+
+<ng-container *ngIf="guest$ | async as guest ; else user">
+  <h1>Utilisateur invité : {{guest.name}}</h1>
+
+  <mat-card>
+    <mat-card-title>Informations sur l'utilisateur</mat-card-title>
+    <ul>
+      <li><b>Type :</b> Utilisateur invité</li>
+      <li><b>Nom :</b> {{guest.name}}</li>
+      <li *ngIf="guest.organization"><b>Organisation :</b> {{guest.organization}}</li>
+      <li *ngIf="guest.description"><b>Description :</b> {{guest.description}}</li>
+      <li *ngIf="guest.phoneNumber"><b>Téléphone :</b> {{guest.phoneNumber}}</li>
+      <li *ngIf="guest.email"><b>Email :</b> {{guest.email}}</li>
+      <li *ngIf="guest.location"><b>Localisation :</b> {{guest.location}}</li>
+    </ul>
+  </mat-card>
+</ng-container>

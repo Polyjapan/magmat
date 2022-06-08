@@ -1,0 +1,15 @@
+<p>{{label}}</p>
+
+<div fxLayout="row" fxLayoutGap="20px">
+  <mat-form-field fxFlex>
+    <input required matInput name="date" [matDatepicker]="datePicker" placeholder="Date" [(ngModel)]="selectedDate" (ngModelChange)="onChange($event, dte, time)" #dte="ngModel">
+    <mat-datepicker-toggle matSuffix [for]="datePicker"></mat-datepicker-toggle>
+    <mat-datepicker #datePicker></mat-datepicker>
+  </mat-form-field>
+
+
+  <mat-form-field fxFlex="30%">
+    <input required matInput name="time" placeholder="Heure (HH:MM)" [(ngModel)]="selectedTime" (ngModelChange)="onChange($event, dte, time)" #time="ngModel">
+    <mat-error>Format d'heure incorrect</mat-error>
+  </mat-form-field>
+</div>

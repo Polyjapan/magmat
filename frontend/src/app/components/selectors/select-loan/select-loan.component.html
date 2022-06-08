@@ -1,0 +1,14 @@
+<mat-form-field style="width: 100%;">
+  <mat-label>{{label ? label : 'Lien du prêt'}}</mat-label>
+
+  <ng-container *ngIf="type === 'select'">
+    <mat-select [ngModel]="selected" (ngModelChange)="selectedChange.emit($event)" name="partOfLoan">
+      <mat-option [value]="null">
+        {{ emptyLabel }}
+      </mat-option>
+      <mat-option *ngFor="let option of loans" [value]="option.externalLoan.externalLoanId">
+        {{ displayLoan(option) }}
+      </mat-option>
+    </mat-select>
+  </ng-container>
+</mat-form-field>

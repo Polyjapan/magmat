@@ -1,0 +1,69 @@
+<h1>Magmat'o'Matic</h1>
+<h2><i>Salut pétole !</i></h2>
+
+<div fxLayout.lt-md="column" fxLayout="row" fxLayoutGap="10px">
+
+  <div fxFlex>
+    <mat-card>
+      <mat-card-title>Changement d'état rapide</mat-card-title>
+
+      <app-select-object #quickChangeState (selectedObjectChange)="quickLoanObject = $event"></app-select-object>
+
+      <p *ngIf="quickLoanObject && quickLoanObject.object.description"><b>Description : </b>{{quickLoanObject.object.description}}</p>
+
+      <app-quick-changestate *ngIf="quickLoanObject" [object]="quickLoanObject"
+                             (update)="quickChangeState.reset()"></app-quick-changestate>
+    </mat-card>
+  </div>
+  <div fxFlex>
+    <mat-card>
+      <mat-card-title>Prêt/Retour multiple rapide</mat-card-title>
+      <p>Permet de prêter ou récupérer d'un coup plusieurs objets d'un utilisateur. Les objets doivent tous avoir le
+        même état source (prêté ou à rendre).</p>
+
+      <app-select-user #quickMultiLoanUserSelect [(userId)]="quickLoanMultiUser" [allowGuests]="false"></app-select-user>
+
+      <ng-container *ngIf="quickLoanMultiUser">
+        <mat-form-field style="width: 100%;">
+          <textarea matInput placeholder="Asset Tags" name="assetTags" [formControl]="quickLoanMultiTags"></textarea>
+        </mat-form-field>
+
+        <ng-container *ngIf="quickLoanFoundObjects && quickLoanFoundObjects.length > 0 && !currentError">
+          <p>Objets trouvés :</p>
+          <ul>
+            <li *ngFor="let obj of quickLoanFoundObjects">{{obj.objectType.name}} {{obj.object.suffix}} (rangement : {{storageLocationToString(obj.inconvStorageLocationObject)}}</li>
+          </ul>
+
+          <p *ngIf="!targetState">Erreur : Les objets n'ont pas tous le même état.</p>
+
+          <p *ngIf="requiresSignature"><b><mat-icon>warning</mat-icon> ATTENTION : </b>Une signature est requise pour prêter l'objet. Ne laissez pas partir la personne avant d'avoir la signature.</p>
+
+          <button *ngIf="targetState" [disabled]="quickLoanMultiSending" type="submit" (click)="quickLoan()" mat-stroked-button
+                  color="accent" style="width: 100%;">{{targetState === ObjectStatus.OUT ? 'Ouvrir' : 'Fermer'}} le prêt
+          </button>
+        </ng-container>
+
+        <p *ngIf="currentError">Erreur : {{currentError}}</p>
+      </ng-container>
+
+    </mat-card>
+  </div>
+  <div fxFlex>
+    <mat-card>
+      <mat-card-title>Accès rapide</mat-card-title>
+
+      <app-select-object (selectedObjectChange)="redirectTo($event)"></app-select-object>
+    </mat-card>
+
+    <mat-card style="margin-top: 10px;">
+      <mat-card-title>Déplacement rapide</mat-card-title>
+
+
+      <app-select-storage [(selected)]="quickMoveStorage"></app-select-storage>
+
+      <app-quickmove *ngIf="quickMoveStorage" [locationId]="quickMoveStorage"
+                     (success)="quickMoveStorage = undefined"></app-quickmove>
+    </mat-card>
+  </div>
+
+</div>

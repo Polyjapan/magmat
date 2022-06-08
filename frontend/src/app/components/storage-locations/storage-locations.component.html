@@ -1,0 +1,28 @@
+
+
+<div fxLayout="row" fxLayout.lt-md="column">
+  <div fxFlex>
+    <h1 style="margin-top: 8px;">Emplacements de stockage</h1>
+  </div>
+  <div fxFlex>
+    <app-select-storage label="Accès rapide..." (selectedChange)="goTo($event)"></app-select-storage>
+  </div>
+</div>
+
+<mat-card>
+  <mat-card-content>
+    <div style="position: fixed; bottom: 1em; right: 1em; opacity: 1; z-index: 1;">
+      <button mat-fab (click)="create()" type="button" color="primary"><mat-icon>add</mat-icon></button>
+      <button mat-fab (click)="refresh()" type="button" color="primary" style="margin-left: .5em"><mat-icon>refresh</mat-icon></button>
+    </div>
+
+    <ng-template #loading>
+      <mat-spinner></mat-spinner>
+    </ng-template>
+
+    <ng-container *ngIf="storageLocations | async ; let s; else loading">
+      <app-location-tree [trees]="s" style="margin-left: 2em;"></app-location-tree>
+    </ng-container>
+
+  </mat-card-content>
+</mat-card>

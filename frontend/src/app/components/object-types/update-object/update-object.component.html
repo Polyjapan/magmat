@@ -1,0 +1,66 @@
+<mat-spinner *ngIf="!object"></mat-spinner>
+
+<ng-container *ngIf="object">
+
+  <h1>Modifier un objet</h1>
+
+  <form #form="ngForm">
+    <h2>Informations sur l'objet</h2>
+    <mat-form-field>
+      <input matInput placeholder="Suffixe de l'objet" required [(ngModel)]="object.object.suffix" name="name">
+      <span matPrefix style="margin-right: 5px;">{{object.objectType.name}}</span>
+    </mat-form-field>
+
+    <mat-form-field>
+      <input matInput placeholder="Asset Tag (code barre)" required [(ngModel)]="object.object.assetTag" name="assetTag">
+    </mat-form-field>
+
+    <app-select-object-type [(selectedObject)]="object.objectTypeAncestry"></app-select-object-type>
+
+    <mat-form-field>
+      <mat-label>Description (héritée par défaut de la catégorie)</mat-label>
+      <textarea matInput placeholder="{{object.objectType.description ?? 'Aucune description'}}" [(ngModel)]="object.object.description" name="description"></textarea>
+    </mat-form-field>
+
+    <ng-container *ngIf="event">
+      <h2>Aides-mémoire</h2>
+      <p>Ces champs vous permettent de retenir facilement quelques informations importantes pour l'objet. Sentez vous libre d'y inscrire ce que vous souhaitez.</p>
+
+      <mat-form-field>
+        <input matInput placeholder="Utilisation prévue" [(ngModel)]="object.object.plannedUse" name="plannedUse">
+      </mat-form-field>
+
+      <mat-form-field>
+        <input matInput placeholder="Lieu de dépose"  [(ngModel)]="object.object.depositPlace" name="depositPlace">
+      </mat-form-field>
+
+
+      <app-select-user label="Objet réservé pour..." [(selected)]="object.object.reservedFor" [allowGuests]="false"></app-select-user>
+    </ng-container>
+
+    <h2>Rangement de l'objet</h2>
+
+    <app-select-storage *ngIf="event" [(selected)]="object.object.inconvStorageLocation" [inconv]="true" label="Lieu de stockage durant {{event.name}}"></app-select-storage>
+
+    <ng-template #noEvent>
+      <app-select-storage [(selected)]="object.object.storageLocation" [inconv]="false" label="Lieu de stockage"></app-select-storage>
+    </ng-template>
+
+    <div fxLayout="row" *ngIf="event ; else noEvent">
+      <app-select-storage fxFlex="1 1 45%" [(selected)]="object.object.storageLocation" [inconv]="false" [disabled]="object.object.partOfLoan !== undefined" label="Lieu de stockage hors JI"></app-select-storage>
+
+      <p fxFlex="1 1 10%" style="text-align: center;"><b>OU</b></p>
+
+      <app-select-loan fxFlex="1 1 45%" [(selected)]="object.object.partOfLoan" [disabled]="object.object.storageLocation !== undefined"></app-select-loan>
+    </div>
+
+    <br>
+
+
+    <div fxLayout="row" fxLayoutGap="5%">
+      <button (click)="update()" mat-raised-button [disabled]="form.invalid || sending">Mettre à jour</button>
+    </div>
+
+  </form>
+
+</ng-container>

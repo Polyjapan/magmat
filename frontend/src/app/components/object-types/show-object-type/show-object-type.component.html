@@ -1,0 +1,100 @@
+<mat-spinner *ngIf="!(parents$ | async) && !(errors | async)"></mat-spinner>
+
+<ng-container *ngIf="errors | async ; let err">
+  <ng-container *ngIf="!(parents$ | async)">
+    <h1>Une erreur s'est produite</h1>
+    <p>{{err }}</p>
+  </ng-container>
+</ng-container>
+
+<ng-container *ngIf="parents$ | async ; let parent">
+  <div style="float: right;">
+    <button mat-raised-button (click)="update(parent)" color="primary" style="margin-right: 10px"><mat-icon>edit</mat-icon> Modifier</button>
+    <button mat-raised-button (click)="create(parent)" color="accent" style="margin-right: 10px"><mat-icon>add</mat-icon> Créer un nouveau</button>
+    <button mat-raised-button (click)="delete()" color="warn"><mat-icon>delete</mat-icon> Supprimer</button>
+  </div>
+  <h1>Catégorie {{objectTypeToString(parent)}}</h1>
+  <br>
+
+  <div fxLayout="row" fxLayout.lt-md="column" fxLayoutGap="20px">
+
+    <div fxFlex>
+      <mat-card>
+        <div style="float: right;" *ngIf="(tree$ | async)?.children?.length > 0">
+          <mat-slide-toggle name="displayAll" [(ngModel)]="displayAll" (ngModelChange)="refresh()">Voir aussi les sous catégories</mat-slide-toggle>
+        </div>
+        <mat-card-header>
+          <mat-card-title>Objets dans cette catégorie</mat-card-title>
+        </mat-card-header>
+
+        <ng-template #loadingItems><mat-spinner></mat-spinner></ng-template>
+        <app-objects-list class="fullWidth" [fullWidth]="true" *ngIf="items$ | async ; let items ; else loadingItems" [objects]="items"></app-objects-list>
+
+      </mat-card>
+    </div>
+
+    <div fxFlex fxLayout="column" fxLayoutGap="20px">
+      <mat-card *ngIf="objectTypeData(parent).length > 0">
+        <mat-card-header>
+          <mat-card-title>Propriétés</mat-card-title>
+        </mat-card-header>
+        <mat-table mat-card-content [dataSource]="objectTypeData(parent)" class="fullWidth">
+          <ng-container matColumnDef="property">
+            <mat-cell *matCellDef="let elem"><b>{{elem[0]}}</b></mat-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="value">
+            <mat-cell *matCellDef="let elem">{{elem[1]}} </mat-cell>
+          </ng-container>
+
+          <mat-row style="height: 40px" *matRowDef="let row; columns: ['property', 'value'];" [routerLink]="row[2]"
+                   [class.hover]="row[2]"></mat-row>
+        </mat-table>
+
+        <mat-card-actions>
+          <button [routerLink]="['..', 'edit', id]" mat-button>MODIFIER</button>
+          <button (click)="delete()" mat-button>SUPPRIMER</button>
+        </mat-card-actions>
+      </mat-card>
+
+
+      <mat-card *ngIf="parent.child">
+        <mat-card-header>
+          <mat-card-title>Hiérarchie</mat-card-title>
+        </mat-card-header>
+
+        <mat-card-content>
+          <app-object-type-tree [ancestry]="parent"></app-object-type-tree>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card *ngIf="tree$ && (tree$ | async)?.children?.length ?? 0 > 0">
+        <mat-card-header>
+          <mat-card-title>Enfants</mat-card-title>
+
+        </mat-card-header>
+
+        <mat-card-content *ngIf="tree$ | async ; let tree">
+          <app-object-type-tree [trees]="[tree]"></app-object-type-tree>
+        </mat-card-content>
+
+      </mat-card>
+
+      <mat-card>
+        <mat-card-header>
+          <mat-card-title>Ajout rapide d'objets</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <p>Les objets ainsi ajoutés auront tous leurs paramètres par défaut. Le suffixe de l'objet est généré à partir
+            du préfixe de suffixe, et d'un numéro qui est incrémenté pour chaque objet ajouté. Le préfixe de suffixe est
+            facultatif.</p>
+          <p><i>Exemple: si le préfixe de suffixe est "Asus" et le numéro de départ "03", les objets auront pour nom
+            <b>{{lastChild(parent).name}} Asus 03</b>, <b>{{lastChild(parent).name}} Asus 04</b>, ...</i></p>
+          <app-quick-item-create [objectType]="lastChild(parent)" (createSuccess)="refresh()"
+                                 style="width: 100%;"></app-quick-item-create>
+        </mat-card-content>
+      </mat-card>
+    </div>
+
+  </div>
+</ng-container>

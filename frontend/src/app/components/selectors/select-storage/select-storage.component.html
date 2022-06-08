@@ -1,0 +1,13 @@
+<mat-form-field style="width: 100%;">
+  <mat-label>{{label ? label : 'Lieu de rangement'}}</mat-label>
+  <input type="text" matInput [formControl]="searchControl" (ngModelChange)="onValueChange($event)" name="selected" [matAutocomplete]="auto">
+
+  <mat-autocomplete #auto="matAutocomplete"
+                    [displayWith]="displayLocation"
+                    (optionSelected)="onValueChange($event.option.value)">
+    <mat-option *ngFor="let location of filteredLocations | async"
+                [value]="location">{{displayLocation(location)}}</mat-option>
+  </mat-autocomplete>
+
+  <mat-error>Aucun stockage trouvé</mat-error>
+</mat-form-field>

@@ -1,0 +1,6 @@
+<mat-form-field style="width: 100%;">
+  <mat-label>{{label}}</mat-label>
+  <input matInput placeholder="Asset tag" [ngModel]="selected" #input="ngModel" (ngModelChange)="update($event)" name="tag">
+  <mat-error>Aucun objet trouvé avec cet asset tag</mat-error>
+</mat-form-field>
+<p *ngIf="currentObject">Objet trouvé : <b>{{currentObject.objectType.name}} {{currentObject.object.suffix}}</b>.</p>

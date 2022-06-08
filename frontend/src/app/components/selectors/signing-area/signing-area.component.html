@@ -1,0 +1,8 @@
+<div #sigContainer class="sig-container" style="width: 100%;">
+  <p><mat-icon>gesture</mat-icon> <b>Signature requise.</b> Date et signature :
+
+    <button mat-button (click)="sig.clear() ; reset()"><mat-icon>clear_all</mat-icon> Effacer</button>
+  </p>
+  <signature-pad #sig style="width: 100%;" (onEndEvent)="drawComplete()"></signature-pad>
+
+</div>
