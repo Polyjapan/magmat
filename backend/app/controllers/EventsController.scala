@@ -9,7 +9,7 @@ import utils.AuthenticationPostfix._
 
 import java.time.Clock
 import javax.inject.Inject
-import scala.concurrent.ExecutionContext
+import scala.concurrent.{ExecutionContext, Future}
 
 /**
  * @author Louis Vialar
@@ -18,10 +18,10 @@ class EventsController @Inject()(cc: ControllerComponents, model: EventsModel)(i
 
   def getEvent: Action[AnyContent] = Action.async { implicit rq =>
     (
-      if (rq.eventIdOpt.nonEmpty) model.getEvent(rq.eventIdOpt.get)
-      else model.getCurrentEvent
+      if (rq.eventIdOpt.nonEmpty) model.getEvent(rq.eventIdOpt.get).map(ev => Ok(Json.toJson(ev)))
+      else Future.successful(NotFound)
 
-      ).map(ev => Ok(Json.toJson(ev))).recover {
+      ).recover {
       case _ => NotFound
     }
   }.requiresAuthentication

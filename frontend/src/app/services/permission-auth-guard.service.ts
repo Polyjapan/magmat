@@ -2,8 +2,7 @@ import {ActivatedRouteSnapshot, CanActivate, CanActivateChild, Router, RouterSta
 import {Injectable} from '@angular/core';
 import {AuthService} from './auth.service';
 import {LoginService} from './login.service';
-import {Observable} from 'rxjs';
-import {of} from 'rxjs/internal/observable/of';
+import {Observable, of} from 'rxjs';
 import {catchError, map} from 'rxjs/operators';
 
 @Injectable({
@@ -23,7 +22,7 @@ export class PermissionAuthGuard implements CanActivate, CanActivateChild {
         }))
         .pipe(catchError(err => {
           const details = err.status === 403 ? 'permissions' : 'request';
-          return of(this.router.createUrlTree(['login-failed', details]))
+          return of(this.router.createUrlTree(['login-failed', details]));
         }));
     } else {
       return this.router.createUrlTree(['require-login']);
