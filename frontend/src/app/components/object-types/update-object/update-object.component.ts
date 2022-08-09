@@ -38,8 +38,8 @@ export class UpdateObjectComponent implements OnInit {
       return;
     }
 
-    if (this.object.object.objectTypeId !== this.object.objectType.objectTypeId) {
-      this.object.object.objectTypeId = this.object.objectType.objectTypeId;
+    if (this.object.object.objectTypeId !== this.object.objectTypeAncestry.objectType.objectTypeId) {
+      this.object.object.objectTypeId = this.object.objectTypeAncestry.objectType.objectTypeId;
     }
 
     this.sending = true;

@@ -25,7 +25,7 @@
     Utilisateurs invités</a>
   <a mat-list-item *ngIf="inEvent | async" [class.active]="subUrl === 'external-loans'" [routerLink]="['external-loans']">
     <mat-icon>call_received</mat-icon>
-    Objets empruntés</a>
+    Prêts d'externes</a>
 
   <a mat-list-item [class.active]="subUrl === 'user-logs'" [routerLink]="['user-logs']">
     <mat-icon>swap_horiz</mat-icon>

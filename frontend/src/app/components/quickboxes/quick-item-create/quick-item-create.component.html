@@ -8,6 +8,11 @@
     <input matInput type="number" placeholder="Numéro de départ du suffixe" required name="startNumber" [(ngModel)]="suffixStart">
   </mat-form-field>
 
+  <app-select-storage [inconv]="false" *ngIf="!setLoan" style="width: 100%" [(selected)]="location" label="Stockage durant l'année"></app-select-storage>
+  <app-select-storage [inconv]="true" *ngIf="event" style="width: 100%" [(selected)]="eventLocation" label="Stockage durant {{event.name}}"></app-select-storage>
+
+  <mat-checkbox name="signature" [(ngModel)]="requiresSignature">Une signature est requise pour emprunter l'objet</mat-checkbox>
+
   <mat-form-field style="width: 100%">
     <textarea matInput placeholder="Liste des asset tags (1 par ligne)" required name="assetTags" [(ngModel)]="tags"></textarea>
   </mat-form-field>

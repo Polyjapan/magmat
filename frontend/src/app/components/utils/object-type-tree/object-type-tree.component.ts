@@ -3,6 +3,7 @@ import {StorageTree} from '../../../data/storage-location';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {ObjectTypeAncestry, ObjectTypeTree} from '../../../data/object-type';
+import {CdkDragDrop} from '@angular/cdk/drag-drop';
 
 @Component({
   selector: 'app-object-type-tree',
@@ -56,5 +57,4 @@ export class ObjectTypeTreeComponent implements OnInit {
   ngOnChanges(changes: SimpleChanges): void {
     this.reloadTree();
   }
-
 }

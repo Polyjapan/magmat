@@ -10,6 +10,7 @@ import Swal from 'sweetalert2';
 import {SelectObjectTypeComponent} from '../../selectors/select-object-type/select-object-type.component';
 import {Observable} from 'rxjs';
 import {ObjectTypesService} from '../../../services/object-types.service';
+import {map} from 'rxjs/operators';
 
 @Component({
   selector: 'app-view-external-loan',
@@ -56,13 +57,14 @@ export class ViewExternalLoanComponent implements OnInit {
     this.ar.paramMap.subscribe(map => {
       this.id = Number.parseInt(map.get('id'), 10);
       this.loan$ = this.ls.getLoan(this.id);
+      this.refreshObjects()
     });
 
     this.resetCreatedType();
   }
 
   refreshObjects() {
-    this.os.getObjectsForLoan(this.id).subscribe(items => this.items = items);
+    this.os.getObjects().pipe(map(o => o.filter(obj => obj.partOfLoanObject?.externalLoan?.externalLoanId === this.id))).subscribe(items => this.items = items);
   }
 
   refreshLoan() {

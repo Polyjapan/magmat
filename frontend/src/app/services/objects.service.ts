@@ -177,8 +177,9 @@ export class ObjectsService {
     return this.http.get<number>(environment.apiurl + '/objects/nextSuffix/' + typeId + '?prefix=' + prefix);
   }
 
-  createObjects(objects: SingleObject[]): Observable<ObjectCreateResult> {
-    return this.http.post<ObjectCreateResult>(environment.apiurl + '/objects/', objects);
+  createObjects(objects: SingleObject[], eventId?: number): Observable<ObjectCreateResult> {
+    const getParameter = eventId ? '?eventId=' + eventId : '';
+    return this.http.post<ObjectCreateResult>(environment.apiurl + '/objects/' + getParameter, objects);
   }
 
   changeState(objectId: number, targetState: ObjectStatus, user: number, signature?: string): Observable<void> {

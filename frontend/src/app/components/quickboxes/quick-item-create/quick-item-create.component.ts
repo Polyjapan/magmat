@@ -3,6 +3,8 @@ import Swal from 'sweetalert2';
 import {ObjectStatus, SingleObject} from '../../../data/object';
 import {ObjectsService} from '../../../services/objects.service';
 import {ObjectType} from '../../../data/object-type';
+import {EventsService} from '../../../services/events.service';
+import {Event} from '../../../data/event';
 
 @Component({
   selector: 'app-quick-item-create',
@@ -18,13 +20,21 @@ export class QuickItemCreateComponent implements OnChanges {
   suffixStart: number;
   tags: string;
   sending = false;
+  eventLocation: number;
+  location: number;
+  requiresSignature: boolean = false;
+
+  event: Event = undefined;
+
 
   updatePrefix(prefix: string) {
     this.prefix = prefix;
     this.objectsService.getNextSuffix(this.objectType.objectTypeId, this.prefix).subscribe(n => this.suffixStart = n);
   }
 
-  constructor(private objectsService: ObjectsService) { }
+  constructor(private objectsService: ObjectsService, eventsService: EventsService) {
+    eventsService.getCurrentEvent().subscribe(ev => this.event = ev);
+  }
 
   ngOnChanges(changes: SimpleChanges) {
     if (changes.objectType && ((this.prefix ?? '')  === '')) {
@@ -56,7 +66,8 @@ export class QuickItemCreateComponent implements OnChanges {
       this.sending = true;
     }
 
-    this.objectsService.createObjects(objects).subscribe(result => {
+    this.objectsService.createObjects(objects, this.event?.id).subscribe(result => {
+      this.objectsService.refreshObjects();
       if (result.inserted.length !== 0) {
         this.createSuccess.emit(result.inserted);
       }
@@ -95,7 +106,9 @@ export class QuickItemCreateComponent implements OnChanges {
         assetTag: tag,
         status: ObjectStatus.IN_STOCK,
         partOfLoan: this.setLoan,
-        requiresSignature: false, // todo
+        storageLocation: this.location,
+        inconvStorageLocation: this.eventLocation,
+        requiresSignature: this.requiresSignature, // todo
       };
     });
   }

@@ -85,11 +85,11 @@
           <mat-card-title>Ajout rapide d'objets</mat-card-title>
         </mat-card-header>
         <mat-card-content>
-          <p>Les objets ainsi ajoutés auront tous leurs paramètres par défaut. Le suffixe de l'objet est généré à partir
-            du préfixe de suffixe, et d'un numéro qui est incrémenté pour chaque objet ajouté. Le préfixe de suffixe est
-            facultatif.</p>
+          <p>Le suffixe de l'objet est généré à partir du préfixe de suffixe, et d'un numéro qui est incrémenté pour
+            chaque objet ajouté. Le préfixe de suffixe est facultatif.</p>
           <p><i>Exemple: si le préfixe de suffixe est "Asus" et le numéro de départ "03", les objets auront pour nom
             <b>{{lastChild(parent).name}} Asus 03</b>, <b>{{lastChild(parent).name}} Asus 04</b>, ...</i></p>
+          <p><b>Pour ajouter des objets qui sont prêtés à PJ le temps de l'event, merci d'utiliser le formulaire sur la page du prêt.</b></p>
           <app-quick-item-create [objectType]="lastChild(parent)" (createSuccess)="refresh()"
                                  style="width: 100%;"></app-quick-item-create>
         </mat-card-content>

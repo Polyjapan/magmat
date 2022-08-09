@@ -22,6 +22,8 @@
       <textarea matInput placeholder="{{object.objectType.description ?? 'Aucune description'}}" [(ngModel)]="object.object.description" name="description"></textarea>
     </mat-form-field>
 
+    <mat-checkbox name="signature" [(ngModel)]="object.object.requiresSignature">Signature requise pour emprunter l'objet</mat-checkbox>
+
     <ng-container *ngIf="event">
       <h2>Aides-mémoire</h2>
       <p>Ces champs vous permettent de retenir facilement quelques informations importantes pour l'objet. Sentez vous libre d'y inscrire ce que vous souhaitez.</p>

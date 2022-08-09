@@ -1,6 +1,8 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import Swal from "sweetalert2";
 import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {ObjectsService} from '../../../services/objects.service';
+import {Observable} from 'rxjs';
 
 @Component({
   selector: 'app-quickmove',
@@ -12,11 +14,10 @@ export class QuickmoveComponent implements OnInit {
   @Output() success = new EventEmitter();
 
   quickMoveArea: string;
-  moveType = false;
-  moveAllOfType = false;
+  moveAll = false;
   sending = false;
 
-  constructor(private sl: StorageLocationsService) { }
+  constructor(private sl: StorageLocationsService, private objectsService: ObjectsService) { }
 
   ngOnInit() {
   }
@@ -29,15 +30,13 @@ export class QuickmoveComponent implements OnInit {
     }
 
     const quickMoveItems = this.quickMoveArea.split('\n').map(item => item.trim());
-    const moveType = this.moveType;
-    const moveAll = this.moveType && this.moveAllOfType;
 
-    this.sl.moveItems(this.locationId, quickMoveItems, moveType, moveAll)
+    this.sl.moveItems(this.locationId, quickMoveItems, this.moveAll)
       .subscribe(res => {
+        this.objectsService.refreshObjects();
         this.sending = false;
         this.quickMoveArea = '';
-        this.moveType = false;
-        this.moveAllOfType = false;
+        this.moveAll = false;
         this.success.emit();
         Swal.fire('Déplacement terminé', undefined, 'success');
       }, err => {

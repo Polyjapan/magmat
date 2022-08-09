@@ -78,6 +78,7 @@ import {AbstractSelectorComponent} from './components/selectors/abstract-selecto
 import { ObjectTypeTreeComponent } from './components/utils/object-type-tree/object-type-tree.component';
 import { AllObjectsComponent } from './components/object-types/all-objects/all-objects.component';
 import {MatPaginatorModule} from '@angular/material/paginator';
+import {DragDropModule} from '@angular/cdk/drag-drop';
 
 export function tokenGetter() {
   return localStorage.getItem('id_token');
@@ -172,7 +173,8 @@ export function tokenGetter() {
     MatTooltipModule,
     MatTreeModule,
     MatSliderModule,
-    MatPaginatorModule
+    MatPaginatorModule,
+    DragDropModule
 
   ],
   providers: [

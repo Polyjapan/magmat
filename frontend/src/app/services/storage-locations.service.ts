@@ -116,12 +116,12 @@ export class StorageLocationsService {
   }
 
   deleteStorage(loc: number): Observable<void> {
-    return this.http.delete<void>(environment.apiurl + '/locations/' + loc);
+    return this.http.delete<void>(environment.apiurl + '/storage/' + loc);
   }
 
-  moveItems(loc: number, items: string[], moveType: boolean, moveAll: boolean): Observable<void> {
-    return this.http.post<void>(environment.apiurl + '/locations/move/' + loc, {
-      items, moveType, moveAll
+  moveItems(loc: number, items: string[], moveAll: boolean): Observable<void> {
+    return this.http.post<void>(environment.apiurl + '/storage/move/' + loc, {
+      items, moveAll
     });
   }
 

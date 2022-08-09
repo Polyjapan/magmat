@@ -5,6 +5,8 @@ import {MatSort} from '@angular/material/sort';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatPaginator} from '@angular/material/paginator';
 import {normalizeString} from '../../../utils/normalize.string';
+import {Event} from '../../../data/event';
+import {EventsService} from '../../../services/events.service';
 
 @Component({
   selector: 'app-objects-list',
@@ -19,17 +21,25 @@ export class ObjectsListComponent implements OnChanges, AfterViewInit {
   @ViewChild(MatSort, {static: true}) sort: MatSort;
   dataSource: MatTableDataSource<CompleteObject | CompleteObjectWithUser> = new MatTableDataSource();
 
-  constructor() {
+  event: Event;
+
+  constructor(private eventService: EventsService) {
+    eventService.getCurrentEvent().subscribe(ev => this.event = ev);
   }
 
   get columns() {
     const hasUsers = this.objects.filter(o => (o instanceof CompleteObjectWithUser || (o as any).user)).length > 0;
-    const base = ['assetTag', 'name', 'inConvStorage', 'plannedUse', 'reservedFor', 'status'];
+    const base = ['assetTag', 'name', 'storage'];
+
+    if (this.event) {
+      base.push('plannedUse', 'reservedFor')
+    }
 
     if (hasUsers) {
       base.push('user');
     }
 
+    base.push('status');
     // TODO: Louis - I don't like the look of this table with the edit button, but if edit is frequently needed then we may need to put this back
     // base.push('actions');
     return base;
@@ -72,8 +82,8 @@ export class ObjectsListComponent implements OnChanges, AfterViewInit {
       case 'status':
         // Only for sorting
         return statusToString(o.object.status);
-      case 'inConvStorage':
-        return storageLocationToString(o.inconvStorageLocationObject);
+      case 'storage':
+        return storageLocationToString(!this.event ? o.storageLocationObject : o.inconvStorageLocationObject);
       case 'name':
         return o?.objectType?.name + ' ' + o.object.suffix;
       case 'reservedFor':

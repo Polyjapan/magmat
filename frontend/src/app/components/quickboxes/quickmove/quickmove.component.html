@@ -4,20 +4,14 @@
     <textarea placeholder="Objets à déplacer (un code par ligne)" name="quickMoveArea" [(ngModel)]="quickMoveArea" matInput></textarea>
   </mat-form-field>
 
-  <mat-checkbox name="moveType" [(ngModel)]="moveType">
-    Changer l'emplacement de la catégorie
-  </mat-checkbox>
-
-  <br>
-
-  <mat-checkbox name="moveAll" [disabled]="!moveType" [(ngModel)]="moveAllOfType">
-    Déplacer tous les objets du même type
+  <mat-checkbox name="moveType" [(ngModel)]="moveAll">
+    Déplacer tous les objets de la catégorie
   </mat-checkbox>
 
   <br><br>
 
   <button mat-raised-button color="accent" type="submit" style="width: 100%;" [disabled]="sending">
-    Déplacer les {{ moveType ? 'types d\'objets' : 'objets'}}
+    Déplacer les objets
     <mat-progress-spinner *ngIf="sending" mode="indeterminate" diameter="20"
                           class="spinner"></mat-progress-spinner>
   </button>
@@ -27,10 +21,6 @@
   Scannez les asset tag des objets à déplacer dans le champ de texte (un par ligne), et envoyez pour
   déplacer tous ces objets d'un coup.</p>
 <p>
-  Si vous souhaitez changer l'emplacement de la catégorie d'objet et pas seulement de l'objet scanné (exemple : changer
-  l'emplacement du type Laptop en scannant le laptop 10), cochez "Changer l'emplacement de la catégorie d'objet".
-  <br>Cela ne déplacera cependant pas les objets dont l'emplacement a été défini manuellement (par exemple, si
-  le laptop 10 a précédemment été indiqué à un emplacement différent du type Laptop, alors il ne sera pas
-  déplacé). Si vous voulez que ces objets soient déplacés aussi, alors cochez la case "Déplacer tous les objets
-  du même type".
+  Si vous souhaitez changer l'emplacement de tous les objets de la catégorie (et pas seulement l'objet scanné), cochez
+  "Déplacer tous les objets de la catégorie".
 </p>
