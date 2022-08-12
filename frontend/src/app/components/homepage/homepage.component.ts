@@ -2,9 +2,9 @@ import {Component, OnInit, ViewChild} from '@angular/core';
 import {CompleteObject, ObjectStatus, statusToString} from '../../data/object';
 import {Router} from '@angular/router';
 import {FormControl} from '@angular/forms';
-import {catchError, map, switchMap} from 'rxjs/operators';
+import {catchError, map, switchMap, tap} from 'rxjs/operators';
 import {ObjectsService} from '../../services/objects.service';
-import {forkJoin, Observable, of} from 'rxjs';
+import {combineLatest, forkJoin, Observable, of} from 'rxjs';
 import {requestSignature} from '../../services/signature';
 import { MatDialog } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
@@ -71,19 +71,24 @@ export class HomepageComponent implements OnInit {
   ngOnInit() {
     this.quickLoanMultiTags.valueChanges
       .pipe(
-        map(v => (v ?? []).split('\n').map(o => o.trim()).filter(o => o.length > 0)),
-        switchMap(lst =>
-          forkJoin(
-            lst.map(elem => this.objectsService.getObjectByTag(elem)
-              .pipe(catchError(err => of(undefined))) as Observable<CompleteObject>)
-          ) as Observable<CompleteObject[]>
-        )
+        map(v => (v ?? '').split('\n').map(o => o.trim()).filter(o => o.length > 0)),
+        switchMap(lst => {
+          const observables: Observable<CompleteObject>[] =
+            lst.map(elem =>
+              (this.objectsService.getObjectByTag(elem)
+                .pipe(catchError(err => of(undefined)))) as Observable<CompleteObject>
+            );
+
+          return combineLatest(observables);
+
+        }),
+
       ).subscribe(lst => this.quickLoanFoundObjects = lst);
   }
 
 
   redirectTo($event?: CompleteObject | null) {
-    if ($event?.object !== null) {
+    if ($event?.object) {
       this.router.navigate(['/', 'objects', $event.object.objectId]);
     }
   }
