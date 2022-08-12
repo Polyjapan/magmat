@@ -2,6 +2,7 @@ package utils
 
 import ch.japanimpact.auth.api.UserProfile
 import ch.japanimpact.auth.api.apitokens.APITokensService
+import ch.japanimpact.staff.api.StaffsApi
 import com.google.inject.Inject
 import models.UsersModel
 import play.api.Configuration
@@ -13,30 +14,16 @@ import scala.concurrent.{ExecutionContext, Future}
 import scala.concurrent.duration.DurationInt
 
 
-class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: ExecutionContext, conf: Configuration, tokens: APITokensService) {
-  private val apiBase = {
-    var url = conf.get[String]("jistaff.baseUrl")
-    while (url.endsWith("/")) url = url.dropRight(1)
-    url
-  }
+class PeopleService @Inject()(val ws: WSClient, users: UsersModel, staffs: StaffsApi)(implicit ec: ExecutionContext, conf: Configuration, tokens: APITokensService) {
   private val staffIds: mutable.Map[Int, Int] = mutable.Map()
-  private var refreshing: Future[List[List[Int]]] = _
+  private var refreshing: Future[List[StaffsApi.Staff]] = _
   private var lastUpdate = 0L
 
   private val token = tokens.holder(Set("staff/list/event/*"), Set("staff"), 48.hours)
 
   private def getStaffs() = {
-    token().flatMap { tok =>
-      ws.url(apiBase + "/front/staffs")
-        .addHttpHeaders("Authorization" -> ("Bearer " + tok))
-        .get()
-        .map { r =>
-          println(r)
-          if (r.status == 200) {
-            r.json.as[List[List[Int]]]
-          } else List.empty[List[Int]]
-        }
-    }
+    // TODO: ideally, this method takes an eventId as parameter instead of always returning the latest event :)
+    staffs.getStaffListForCurrentEvent.map(_.toOption.toList.flatten)
   }
 
   private def updateIfNeeded(): Future[Map[Int, Int]] = {
@@ -48,7 +35,7 @@ class PeopleService @Inject()(val ws: WSClient, users: UsersModel)(implicit ec: 
 
       refreshing.map(list => {
           staffIds.clear()
-          list.foreach(elem => staffIds.put(elem(0), elem(1)))
+        list.foreach(elem => staffIds.put(elem.userId, elem.staffNumber))
           staffIds.toMap
         })
     } else if (refreshing == null) {

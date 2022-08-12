@@ -4,7 +4,7 @@ lazy val MagmatBackend = (project in file("."))
   .enablePlugins(PlayScala, JavaServerAppPackaging, DockerPlugin)
   .settings(
     name := "MagmatBackend",
-    version := "1.3.2",
+    version := "1.3.4",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(jdbc, evolutions, ehcache, ws, specs2 % Test, guice),
 
@@ -15,6 +15,7 @@ lazy val MagmatBackend = (project in file("."))
     libraryDependencies += "ch.japanimpact" %% "ji-events-api" % "1.0-SNAPSHOT",
     libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.34",
     libraryDependencies += "com.pauldijou" %% "jwt-play" % "4.2.0",
+    libraryDependencies += "ch.japanimpact" %% "staff-api" % "1.5.2",
 
     resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
     resolvers += "Japan Impact Snapshots" at "https://repository.japan-impact.ch/snapshots",

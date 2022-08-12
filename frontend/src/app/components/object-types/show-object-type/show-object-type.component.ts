@@ -34,17 +34,20 @@ export class ShowObjectTypeComponent implements OnInit {
   tree$: Observable<ObjectTypeTree>;
   parents$: Observable<ObjectTypeAncestry>;
   items$: Observable<CompleteObject[]>;
-  displayAll: boolean = true;
+  displayAll = true;
 
-  lastChild = lastChild
+  lastChild = lastChild;
 
-  constructor(private route: ActivatedRoute, private objectsService: ObjectsService, private objectTypeService: ObjectTypesService,
-              private router: Router, private dialog: MatDialog) {
+  constructor(private route: ActivatedRoute,
+              private objectsService: ObjectsService,
+              private objectTypeService: ObjectTypesService,
+              private router: Router,
+              private dialog: MatDialog) {
   }
 
   ngOnInit() {
-    this.route.paramMap.subscribe(map => {
-      this.id = Number.parseInt(map.get('typeId'), 10);
+    this.route.paramMap.subscribe(params => {
+      this.id = Number.parseInt(params.get('typeId'), 10);
 
       this.tree$ = undefined;
       this.parents$ = undefined;
@@ -56,13 +59,18 @@ export class ShowObjectTypeComponent implements OnInit {
   }
 
   refresh() {
-    const [succ, err] = partition(this.objectTypeService.getObjectTypeTree(this.id), el => (el ?? null) !== null)
+    const [succ, err] = partition(this.objectTypeService.getObjectTypeTree(this.id), el => (el ?? null) !== null);
 
     this.tree$ = succ.pipe();
-    this.errors = err.pipe(map(err => "Impossible de trouver cette catégorie."))
+    this.errors = err.pipe(map(_ => 'Impossible de trouver cette catégorie.'));
 
     this.items$ = this.tree$.pipe(switchMap(v => this.objectsService.getObjects()
-      .pipe(map(allObj => allObj.filter(o => this.displayAll ? objectHasParentObjectType(o.objectTypeAncestry, this.id) : o.object.objectTypeId === this.id )))))
+      .pipe(map(allObj =>
+        allObj.filter(o =>
+          this.displayAll ?
+            objectHasParentObjectType(o.objectTypeAncestry, this.id) :
+            o.object.objectTypeId === this.id )
+      ))));
     this.parents$ = this.objectTypeService.getObjectTypeWithParents(this.id);
   }
 
@@ -77,7 +85,7 @@ export class ShowObjectTypeComponent implements OnInit {
   }
 
   update(ot: ObjectTypeAncestry) {
-    const tree = {...lastChild(ot) }
+    const tree = {...lastChild(ot) };
     this.dialog.open(CreateObjectTypeComponent, {data: tree});
   }
 
@@ -85,7 +93,7 @@ export class ShowObjectTypeComponent implements OnInit {
     const tree = lastChild(ot);
     const data = new ObjectType();
     data.parentObjectTypeId = tree.objectTypeId;
-    this.dialog.open(CreateObjectTypeComponent, {data: data});
+    this.dialog.open(CreateObjectTypeComponent, {data});
   }
 
 

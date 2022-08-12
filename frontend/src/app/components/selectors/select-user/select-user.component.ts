@@ -17,14 +17,14 @@ import {UsersService} from '../../../services/users.service';
   styleUrls: ['./select-user.component.css']
 })
 export class SelectUserComponent extends AbstractSelectorComponent<UserProfile | Guest>{
-  private userGuestDiscriminant = 0x1000000 // 6 bytes == 2^48 = enough
+  private userGuestDiscriminant = 0x1000000; // 6 bytes == 2^48 = enough
 
-  autoSelect = true
+  autoSelect = true;
 
-  @Input() label: string = 'Choisir un utilisateur';
+  @Input() label = 'Choisir un utilisateur';
   @Input() userId: number;
 
-  @Input() allowGuests: boolean = true;
+  @Input() allowGuests = true;
 
   @Output() userIdChange = this.selectedChange.pipe(filter(id => id < this.userGuestDiscriminant));
   @Output() selectedUser = this.selectedObjectChange;
@@ -33,20 +33,20 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
     super();
   }
 
-  defaultLabel: string = "ID utilisateur ou recherche";
+  defaultLabel = 'ID utilisateur ou recherche';
 
   displayValue(val: [number, (UserProfile | Guest)] | undefined): string | undefined {
     if (val) {
       const v = val[1];
       if (has(v, 'guestId')) {
         const guest = v as Guest;
-        return 'Invité ' + guest.guestId + ' : ' + guest.name + ' ' + (guest.organization ?? '') + ' ' + (guest.email ?? '')
+        return 'Invité ' + guest.guestId + ' : ' + guest.name + ' ' + (guest.organization ?? '') + ' ' + (guest.email ?? '');
       } else {
         const user = v as UserProfile;
         if (user.staffNumber) {
-          return 'Staff #' + user.staffNumber + ' : ' + user.details.firstName + ' ' + user.details.lastName
+          return 'Staff #' + user.staffNumber + ' : ' + user.details.firstName + ' ' + user.details.lastName;
         } else {
-          return 'Utilisateur #' + user.id + ' : ' + user.details.firstName + ' ' + user.details.lastName
+          return 'Utilisateur #' + user.id + ' : ' + user.details.firstName + ' ' + user.details.lastName;
         }
       }
     }
@@ -56,30 +56,42 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
   getId(v: UserProfile | Guest | undefined): number | undefined {
     if (v) {
       if (has(v, 'guestId')) {
-        return (v as Guest).guestId | 0x100000
+        return (v as Guest).guestId | 0x100000;
       } else {
-        return (v as UserProfile).id
+        return (v as UserProfile).id;
       }
     }
     return undefined;
   }
 
   getPossibleValues(): Observable<(UserProfile | Guest)[]> {
-    return this.allowGuests ? this.service.getUsers().pipe(switchMap(users => this.guests.getGuests().pipe(map(guests => {
-      const arr = users as (UserProfile | Guest)[];
-      guests.forEach(g => arr.push(g))
-      return arr;
-    })))) : this.service.getUsers();
+    if (this.allowGuests) {
+      return this.service.getUsers()
+        .pipe(
+          switchMap(users =>
+            this.guests.getGuests()
+              .pipe(map(guests => {
+                const arr = users as (UserProfile | Guest)[];
+                guests.forEach(g => arr.push(g));
+                return arr;
+              }))
+          )
+        );
+    } else {
+      return this.service.getUsers();
+    }
   }
 
   toSearchableString(v: UserProfile | Guest): string {
     if (v) {
       if (has(v, 'guestId')) {
         const guest = v as Guest;
-        return guest.guestId + ' ' + guest.name + ' ' + guest.organization + ' ' + guest.email + ' ' + guest.location + ' ' + guest.description
+        return guest.guestId + ' ' + guest.name + ' ' + guest.organization + ' ' + guest.email +
+          ' ' + guest.location + ' ' + guest.description;
       } else {
         const user = v as UserProfile;
-        return 's' + (user.staffNumber ?? '') + ' ' + user.id + ' ' + user.details.firstName + ' ' + user.details.lastName + ' ' + user.email
+        return 's' + (user.staffNumber ?? '') + ' ' + user.id + ' ' + user.details.firstName +
+          ' ' + user.details.lastName + ' ' + user.email;
       }
     }
     return undefined;

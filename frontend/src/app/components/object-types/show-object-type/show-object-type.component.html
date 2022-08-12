@@ -52,7 +52,7 @@
         </mat-table>
 
         <mat-card-actions>
-          <button [routerLink]="['..', 'edit', id]" mat-button>MODIFIER</button>
+          <button (click)="update(parent)" mat-button>MODIFIER</button>
           <button (click)="delete()" mat-button>SUPPRIMER</button>
         </mat-card-actions>
       </mat-card>

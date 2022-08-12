@@ -4,7 +4,7 @@ import {ActivatedRoute} from '@angular/router';
 import {LoansService} from '../../../services/loans.service';
 import {CompleteObject, ObjectStatus} from '../../../data/object';
 import {ObjectsService} from '../../../services/objects.service';
-import {ObjectType} from '../../../data/object-type';
+import {ObjectType, ObjectTypeAncestry} from '../../../data/object-type';
 import {StorageLocationsService} from '../../../services/storage-locations.service';
 import Swal from 'sweetalert2';
 import {SelectObjectTypeComponent} from '../../selectors/select-object-type/select-object-type.component';
@@ -27,10 +27,14 @@ export class ViewExternalLoanComponent implements OnInit {
   creating: boolean;
   changingState = false;
   linkTypesToLoan = false;
-  selectedType: ObjectType;
+  selectedType: ObjectTypeAncestry;
   @ViewChild(SelectObjectTypeComponent) selectObjectTypeComponent: SelectObjectTypeComponent;
 
-  constructor(private ar: ActivatedRoute, private ls: LoansService, private os: ObjectsService, private ots: ObjectTypesService, private sls: StorageLocationsService) {
+  constructor(private ar: ActivatedRoute,
+              private ls: LoansService,
+              private os: ObjectsService,
+              private ots: ObjectTypesService,
+              private sls: StorageLocationsService) {
   }
 
   isPickedUp(loan: CompleteExternalLoan) {

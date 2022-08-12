@@ -94,9 +94,9 @@
 
         <app-select-object-type [(selectedObject)]="selectedType"></app-select-object-type>
 
-        <app-quick-item-create *ngIf="selectedType" [objectType]="selectedType" style="width: 100%;"
+        <app-quick-item-create *ngIf="selectedType" [objectType]="selectedType.objectType" style="width: 100%;"
                                (createSuccess)="selectedType = undefined; refreshObjects()"
-                               [setLoan]="selectedType.partOfLoan ? undefined : loan.externalLoan.externalLoanId"></app-quick-item-create>
+                               [setLoan]="selectedType.objectType?.partOfLoan ? undefined : loan.externalLoan.externalLoanId"></app-quick-item-create>
       </mat-card>
 
       <mat-card>
