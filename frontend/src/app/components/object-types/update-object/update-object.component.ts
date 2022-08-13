@@ -8,6 +8,7 @@ import { MatDialog } from '@angular/material/dialog';
 import {ActivatedRoute, Router} from '@angular/router';
 import Swal from 'sweetalert2';
 import {EventsService} from '../../../services/events.service';
+import {lastChild} from "../../../data/object-type";
 
 @Component({
   selector: 'app-update-object',
@@ -38,8 +39,9 @@ export class UpdateObjectComponent implements OnInit {
       return;
     }
 
-    if (this.object.object.objectTypeId !== this.object.objectTypeAncestry.objectType.objectTypeId) {
-      this.object.object.objectTypeId = this.object.objectTypeAncestry.objectType.objectTypeId;
+    const objectType = lastChild(this.object.objectTypeAncestry);
+    if (this.object.object.objectTypeId !== objectType.objectTypeId) {
+      this.object.object.objectTypeId = objectType.objectTypeId;
     }
 
     this.sending = true;
