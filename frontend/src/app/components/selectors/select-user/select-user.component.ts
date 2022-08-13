@@ -35,6 +35,16 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
 
   defaultLabel = 'ID utilisateur ou recherche';
 
+  toIdentifierString(v: UserProfile | Guest): string | undefined {
+    if (has(v, 'guestId')) {
+      return 'g' + (v as Guest).guestId;
+    } else if ((v as UserProfile).staffNumber) {
+      return 's' + (v as UserProfile).staffNumber;
+    } else {
+      return '' + (v as UserProfile).id;
+    }
+  }
+
   displayValue(val: [number, (UserProfile | Guest)] | undefined): string | undefined {
     if (val) {
       const v = val[1];

@@ -21,13 +21,15 @@ export class ObjectTypeAncestry {
   child?: ObjectTypeAncestry;
 }
 
-export function lastChild(ancestry: ObjectTypeAncestry): ObjectType {
+export function lastChild(ancestry?: ObjectTypeAncestry): ObjectType | undefined {
   let o = ancestry;
-  while (o != null) {
-    if (!o.child) return o.objectType;
+  while (o) {
+    if (!o.child) {
+      return o.objectType;
+    }
     o = o.child;
   }
-  return null; // should never happen
+  return undefined; // should never happen
 }
 
 export function objectHasParentObjectType(objectTypeTree: ObjectTypeAncestry, parentObjectType: number): boolean {

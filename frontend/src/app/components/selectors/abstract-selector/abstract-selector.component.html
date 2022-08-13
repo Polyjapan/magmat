@@ -4,8 +4,7 @@
 
   <mat-autocomplete #auto="matAutocomplete"
                     [displayWith]="displayValue"
-                    (optionSelected)="onValueChange($event.option.value)"
-                    [autoActiveFirstOption]="autoSelect">
+                    (optionSelected)="onValueChange($event.option.value)">
     <mat-option *ngFor="let location of filteredValues | async"
                 [value]="location">{{displayValue(location)}}</mat-option>
   </mat-autocomplete>

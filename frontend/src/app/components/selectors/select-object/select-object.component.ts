@@ -7,11 +7,10 @@ import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.
 @Component({
   selector: 'app-select-object',
   templateUrl: '../abstract-selector/abstract-selector.component.html',
-  styleUrls: ['./select-object.component.css']
+  styleUrls: ['../abstract-selector/abstract-selector.component.css'],
 })
 export class SelectObjectComponent extends AbstractSelectorComponent<CompleteObject> {
-
-  defaultLabel: string = 'Choisir un objet (asset tag ou nom)';
+  defaultLabel = 'Choisir un objet (asset tag ou nom)';
 
   autoSelect = true;
 
@@ -22,6 +21,11 @@ export class SelectObjectComponent extends AbstractSelectorComponent<CompleteObj
   toSearchableString(v: CompleteObject): string {
     return v ? (v.object.assetTag ?? '') + ' ' + v.objectType.name + ' ' + v.object.suffix : undefined;
   }
+
+  toIdentifierString(v: CompleteObject): string | undefined {
+    return v?.object.assetTag;
+  }
+
 
   getPossibleValues(): Observable<CompleteObject[]> {
     return this.service.getObjects();

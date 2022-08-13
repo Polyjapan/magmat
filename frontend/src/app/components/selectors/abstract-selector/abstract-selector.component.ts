@@ -3,6 +3,10 @@ import {Observable} from 'rxjs';
 import {filter, map, startWith} from 'rxjs/operators';
 import {FormControl} from '@angular/forms';
 import {normalizeString} from '../../../utils/normalize.string';
+import {CompleteObject} from "../../../data/object";
+
+type SearchableString = string;
+type IdentifierString = string;
 
 @Component({
   template: '',
@@ -21,13 +25,14 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
 
   autoSelect = false;
 
-  possibleValues: [number, T, string][] = [];
+
+  possibleValues: [number, T, SearchableString, IdentifierString][] = [];
 
   filteredValues: Observable<[number, T][]>;
   searchControl = new FormControl();
   abstract defaultLabel: string;
 
-  abstract toSearchableString(v: T): string
+  abstract toSearchableString(v: T): SearchableString
 
   abstract getPossibleValues(): Observable<T[]>
 
@@ -38,7 +43,7 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
   onValueChange(value) {
     if (value && typeof value === 'string') {
       const sanitized = normalizeString(value);
-      const foundV = this.possibleValues.find(v => v[2] === sanitized);
+      const foundV = this.possibleValues.find(v => v[2] === sanitized || (v[3] && v[3] === sanitized));
       if (foundV) {
         this.selectedObjectChange.emit(foundV[1]);
         this.selectedChange.emit(foundV[0]);
@@ -78,7 +83,12 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
   refresh() {
     this.getPossibleValues()
       .subscribe(values => {
-        this.possibleValues = values.map(v => [this.getId(v), v, normalizeString(this.toSearchableString(v))]);
+        this.possibleValues = values.map(v => [
+          this.getId(v),
+          v,
+          normalizeString(this.toSearchableString(v)),
+          normalizeString(this.toIdentifierString(v))
+        ]);
 
         const selected = this.getId(this.selectedObject) ?? this.selected;
 
@@ -135,6 +145,10 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
     } else {
       this.searchControl.reset();
     }
+  }
+
+  toIdentifierString(v: T): IdentifierString | undefined {
+    return undefined;
   }
 
   reset() {
