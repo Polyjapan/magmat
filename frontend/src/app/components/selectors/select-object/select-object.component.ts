@@ -26,6 +26,9 @@ export class SelectObjectComponent extends AbstractSelectorComponent<CompleteObj
     return v?.object.assetTag;
   }
 
+  refreshValue(id: number, v: CompleteObject): Observable<CompleteObject> | CompleteObject {
+    return this.service.getObjectById(id);
+  }
 
   getPossibleValues(): Observable<CompleteObject[]> {
     return this.service.getObjects();

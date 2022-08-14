@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import {Observable} from 'rxjs';
-import {filter, map, startWith} from 'rxjs/operators';
+import {debounceTime, filter, map, startWith, tap} from 'rxjs/operators';
 import {FormControl} from '@angular/forms';
 import {normalizeString} from '../../../utils/normalize.string';
 import {CompleteObject} from "../../../data/object";
@@ -40,13 +40,30 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
 
   abstract displayValue(val?: [number, T]): string | undefined
 
+  refreshValue(id: number, v: T): Observable<T> | T {
+    return v;
+  }
+
+  private emit(id: number, value: T) {
+    const e: Observable<T> | T = this.refreshValue(id, value);
+    console.log(e)
+    this.selectedChange.emit(id);
+
+    if ((e as any).subscribe) {
+      const obs = e as Observable<T>;
+      console.log("this is an observable!")
+      obs.subscribe(r => this.selectedObjectChange.emit(r));
+    } else {
+      this.selectedObjectChange.emit(value);
+    }
+  }
+
   onValueChange(value) {
     if (value && typeof value === 'string') {
       const sanitized = normalizeString(value);
       const foundV = this.possibleValues.find(v => v[2] === sanitized || (v[3] && v[3] === sanitized));
       if (foundV) {
-        this.selectedObjectChange.emit(foundV[1]);
-        this.selectedChange.emit(foundV[0]);
+        this.emit(foundV[0], foundV[1]);
         this.searchControl.setErrors(null);
       } else {
         this.selectedObjectChange.emit(undefined);
@@ -55,8 +72,7 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
       }
     } else if (value) {
       const [id, stor] = value as [number, T];
-      this.selectedObjectChange.emit(stor);
-      this.selectedChange.emit(id);
+      this.emit(id, stor);
       this.searchControl.setErrors(null);
     } else {
       this.selectedChange.emit(undefined);
@@ -101,7 +117,11 @@ export abstract class AbstractSelectorComponent<T> implements OnInit, OnChanges 
   ngOnInit() {
     this.refresh();
 
-    this.filteredValues = this.searchControl.valueChanges
+    const debouncedSearchControl = this.searchControl.valueChanges.pipe(
+      debounceTime(150),
+    );
+
+    this.filteredValues = debouncedSearchControl
       .pipe(
         startWith(''),
         filter(ev => !ev || typeof ev === 'string'),

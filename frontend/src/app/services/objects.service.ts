@@ -111,17 +111,13 @@ export class ObjectsService {
     return this.objectsMap$;
   }
 
-  getObjectById(objectId: number, forceRefresh: boolean = false): Observable<CompleteObject> {
-    // Todo: evaluate if this is faster or not than the commented approach
-    /*
+  getObjectById(objectId: number): Observable<CompleteObject> {
+
     return this.events.getCurrentEventId().pipe(switchMap(evId => {
         const param = evId ? '?eventId=' + evId : '';
         return this.http.get<CompleteObject>(environment.apiurl + '/objects/complete/' + objectId + param);
       }),
       this.embedStorageAndTypeInObject);
-     */
-    if (forceRefresh) this.refreshObjects();
-    return this.getObjectsMap().pipe(map(map => map.get(objectId)));
   }
 
 
