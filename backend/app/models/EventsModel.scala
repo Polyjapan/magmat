@@ -17,7 +17,8 @@ class EventsModel @Inject()(cache: SyncCacheApi, service: EventsService)(implici
         case Left(err) =>
           Logger("EventsModel").error("API Error while getting current event: " + err.error + " ; " + err.errorMessage)
           throw new Exception("API Error " + err.error)
-        case Right(event) => event.event
+        case Right(event) =>
+          event.event
       }
     }
 

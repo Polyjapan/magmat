@@ -20,9 +20,7 @@ export class EventsService {
       .pipe(shareReplay({bufferSize: 1, refCount: true}));
 
     this.event$ = this.refresh$.pipe(
-      tap(_ => console.log("reloading...")),
       switchMap((_) => this.http.get<Event>(environment.apiurl + '/events/current').pipe(catchError(err => of(null)))),
-      tap(_ => console.log("got event...")),
       shareReplay(1));
   }
 

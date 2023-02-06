@@ -22,6 +22,8 @@ export class AuthService {
 
     if (!act || act.startsWith('/?ticket=')) {
       act = '/';
+      // force the event ID to refresh... simpler than to break the bad code
+      window.location.reload();
     }
 
     return this.route.createUrlTree([act]);
