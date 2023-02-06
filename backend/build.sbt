@@ -4,7 +4,7 @@ lazy val MagmatBackend = (project in file("."))
   .enablePlugins(PlayScala, JavaServerAppPackaging, DockerPlugin)
   .settings(
     name := "MagmatBackend",
-    version := "1.3.5",
+    version := "1.4.0",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(jdbc, evolutions, ehcache, ws, specs2 % Test, guice),
 
