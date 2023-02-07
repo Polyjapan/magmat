@@ -1,0 +1,7 @@
+# copy me to `application.local.conf`, and launch the server with `-Dconfig.resource=application.local.conf`
+
+include "application.conf"
+
+db.default.password = "root"
+cas.service = "localhost"
+jiauth.clientSecret = ""
