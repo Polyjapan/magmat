@@ -3,7 +3,7 @@
 </ng-template>
 
 <ng-container *ngIf="loan$ | async ; let loan ; else loading">
-  <h1>Prêt de {{loan.guest ? loan.guest.name : (loan.user.details.firstName + ' ' + loan.user.details.lastName)}}</h1>
+  <h1>Prêt <em>{{ loan.externalLoan.loanTitle }}</em> de {{loan.guest ? loan.guest.name : (loan.user.details.firstName + ' ' + loan.user.details.lastName)}}</h1>
 
   <div fxLayout.lt-md="column" fxLayout="row" fxLayoutGap="30px">
     <div fxFlex.lt-md fxFlexOrder="2" fxFlexOrder.lt-md="0" [fxFlex]="isReturned(loan) ? '100%' : '30%'">
