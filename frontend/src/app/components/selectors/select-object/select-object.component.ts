@@ -1,7 +1,7 @@
 import {Component} from '@angular/core';
 import {Observable} from 'rxjs';
 import {CompleteObject} from '../../../data/object';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.component';
 
 @Component({
@@ -31,7 +31,7 @@ export class SelectObjectComponent extends AbstractSelectorComponent<CompleteObj
   }
 
   getPossibleValues(): Observable<CompleteObject[]> {
-    return this.service.getObjects();
+    return this.service.objects$;
   }
 
   getId(v: CompleteObject): number {

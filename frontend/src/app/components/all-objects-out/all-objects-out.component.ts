@@ -1,8 +1,10 @@
 import { Component, OnInit } from '@angular/core';
-import {CompleteObject, CompleteObjectWithUser} from '../../data/object';
-import {ObjectsService} from '../../services/objects.service';
-import {ProfileService} from '../../services/profile.service';
-import {switchMap} from 'rxjs/operators';
+import { CompleteObject, ObjectStatus } from '../../data/object';
+import { ObjectsService } from '../../services/stateful/objects.service';
+import { ViewUserService } from '../users/view-user/view-user.service';
+import { Observable } from "rxjs";
+import { AllObjectsComponent } from "../object-types/all-objects/all-objects.component";
+import { map } from "rxjs/operators";
 
 @Component({
   selector: 'app-all-objects-out',
@@ -10,13 +12,19 @@ import {switchMap} from 'rxjs/operators';
   styleUrls: ['./all-objects-out.component.css']
 })
 export class AllObjectsOutComponent implements OnInit {
-  loans: CompleteObjectWithUser[];
+  objects$: Observable<CompleteObject[]>;
 
-  constructor(private backend: ObjectsService, private users: ProfileService) {
+  private static readonly statuses: Set<ObjectStatus> = new Set([ObjectStatus.RESTING, ObjectStatus.LOST, ObjectStatus.OUT])
+
+  constructor(private backend: ObjectsService, private users: ViewUserService) {
   }
 
   ngOnInit() {
-    this.backend.getObjectsLoaned().subscribe(loans => this.loans = loans);
+    this.objects$ = this.backend.objects$
+      .pipe(
+        map(
+          objects => objects.filter(obj => AllObjectsOutComponent.statuses.has(obj.object.status))
+        )
+      )
   }
-
 }

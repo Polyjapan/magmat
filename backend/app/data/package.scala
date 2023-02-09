@@ -60,7 +60,8 @@ package object data {
 
   case class CompleteObject(`object`: SingleObjectJson, objectType: ObjectType,
                             partOfLoanObject: Option[CompleteExternalLoan],
-                            reservedFor: Option[UserProfile] = None)
+                            reservedFor: Option[UserProfile] = None,
+                            userId: Option[Int] = None)
 
   case class ExternalLoan(externalLoanId: Option[Int], guestId: Option[Int], userId: Option[Int], eventId: Int, pickupTime: DateTime,
                           returnTime: DateTime, loanDetails: Option[String], pickupPlace: Option[String], returnPlace: Option[String],

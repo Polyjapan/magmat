@@ -1,6 +1,6 @@
 import {Component, Input, SimpleChanges} from '@angular/core';
 import {lastChild, objectHasParentLocation, storageLocationToString, StorageTree} from '../../../data/storage-location';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.component';

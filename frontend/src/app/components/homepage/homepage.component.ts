@@ -3,13 +3,14 @@ import {CompleteObject, ObjectStatus, statusToString} from '../../data/object';
 import {Router} from '@angular/router';
 import {FormControl} from '@angular/forms';
 import {catchError, map, switchMap, tap} from 'rxjs/operators';
-import {ObjectsService} from '../../services/objects.service';
+import {ObjectsService} from '../../services/stateful/objects.service';
 import {combineLatest, forkJoin, Observable, of} from 'rxjs';
 import {requestSignature} from '../../services/signature';
 import { MatDialog } from '@angular/material/dialog';
 import Swal from 'sweetalert2';
 import {SelectUserComponent} from '../selectors/select-user/select-user.component';
 import {storageLocationToString} from '../../data/storage-location';
+import { ObjectsMutationService } from "../../services/objects-mutation.service";
 
 @Component({
   selector: 'app-homepage',
@@ -29,7 +30,7 @@ export class HomepageComponent implements OnInit {
   @ViewChild('quickMultiLoanUserSelect', {static: true}) userSelector: SelectUserComponent;
   storageLocationToString = storageLocationToString;
 
-  constructor(private router: Router, private objectsService: ObjectsService, private dialog: MatDialog) {
+  constructor(private router: Router, private objectsService: ObjectsService, private objectsMutation: ObjectsMutationService, private dialog: MatDialog) {
   }
 
   get currentError(): string {
@@ -68,6 +69,12 @@ export class HomepageComponent implements OnInit {
     return targetStatuses.indexOf(true) !== -1 && this.targetState === ObjectStatus.OUT;
   }
 
+
+  private getObjectByTag(tag: string): Observable<CompleteObject> {
+    return this.objectsService.objects$
+      .pipe(map(objects => objects.find(object => object.object.assetTag === tag)))
+  }
+
   ngOnInit() {
     this.quickLoanMultiTags.valueChanges
       .pipe(
@@ -75,7 +82,7 @@ export class HomepageComponent implements OnInit {
         switchMap(lst => {
           const observables: Observable<CompleteObject>[] =
             lst.map(elem =>
-              (this.objectsService.getObjectByTag(elem)
+              (this.getObjectByTag(elem)
                 .pipe(catchError(err => of(undefined)))) as Observable<CompleteObject>
             );
 
@@ -128,7 +135,7 @@ export class HomepageComponent implements OnInit {
     }).then(data => {
       if (data.value) {
         const observables = objects.map(o =>
-          this.objectsService
+          this.objectsMutation
             .changeState(o.object.objectId, targetState, userId, o.object.requiresSignature ? signature : undefined)
             .pipe(
               map(res => ({obj: o, success: true})),

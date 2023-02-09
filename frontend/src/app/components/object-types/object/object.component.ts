@@ -1,129 +1,84 @@
-import {Component, OnInit} from '@angular/core';
-import {CompleteObject, ObjectStatus, statusToString} from '../../../data/object';
-import {ObjectsService} from '../../../services/objects.service';
-import {ActivatedRoute, Router} from '@angular/router';
-import {lastChild, storageLocationToString} from '../../../data/storage-location';
-import {externalLoanToString} from 'src/app/data/external-loan';
-import {ObjectLogWithUser} from '../../../data/object-log';
+import { Component, OnInit } from '@angular/core';
+import { CompleteObject, ObjectStatus, statusToString } from '../../../data/object';
+import { ObjectsService } from '../../../services/stateful/objects.service';
+import { ActivatedRoute, Router } from '@angular/router';
+import { lastChild, storageLocationToString } from '../../../data/storage-location';
+import { externalLoanToString } from 'src/app/data/external-loan';
+import { ObjectLogWithUser } from '../../../data/object-log';
 import Swal from 'sweetalert2';
-import {CompleteObjectComment} from '../../../data/object-comment';
-import {AuthService} from '../../../services/auth.service';
-import {Observable} from 'rxjs';
-import {animate, state, style, transition, trigger} from '@angular/animations';
+import { CompleteObjectComment } from '../../../data/object-comment';
+import { AuthService } from '../../../services/auth.service';
+import { merge, Observable, of } from 'rxjs';
+import { animate, state, style, transition, trigger } from '@angular/animations';
+import { SseService } from "../../../services/sse.service";
+import { map, switchMap } from "rxjs/operators";
+import { ObjectsMutationService } from "../../../services/objects-mutation.service";
+
+type ObjectData = [string, string, boolean, (string | number)[]?][]
 
 @Component({
-    selector: 'app-object',
-    templateUrl: './object.component.html',
-    styleUrls: ['./object.component.css'],
-    animations: [
-        trigger('detailExpand', [
-            state('collapsed', style({height: '0px', minHeight: '0'})),
-            state('expanded', style({height: '*'})),
-            transition('expanded <=> collapsed', animate('225ms cubic-bezier(0.4, 0.0, 0.2, 1)')),
-        ]),
-    ],
+  selector: 'app-object',
+  templateUrl: './object.component.html',
+  styleUrls: ['./object.component.css'],
 })
 export class ObjectComponent implements OnInit {
-    object: CompleteObject;
-    externalLoanToString = externalLoanToString;
-    storageLocationToString = storageLocationToString;
-    statusToString = statusToString;
+  object$: Observable<CompleteObject>;
+  objectData$: Observable<ObjectData>
+  id: number;
 
-    logs: Observable<ObjectLogWithUser[]>;
-    comments: CompleteObjectComment[];
-    comment: string;
-    posting = false;
-    private id: number;
+  constructor(private service: ObjectsService,
+              private mutationService: ObjectsMutationService,
+              private route: ActivatedRoute,
+              private auth: AuthService,
+              private router: Router) {
+  }
 
-    expandedElement: ObjectLogWithUser | null;
+  objectData({ object, objectType, ...co }: CompleteObject): ObjectData {
+    const arr: [string, string, boolean, (string | number)[]?][] = [
+      ['ASSET TAG', object.assetTag, false],
+      ['CATÉGORIE', objectType.name, false, ['/', 'object-types', object.objectTypeId]],
+      (object.description ?? objectType.description) ? ['DESCRIPTION', object.description ?? objectType.description, object.description === null || object.description === undefined] : undefined,
+      object.inconvStorageLocation ? ['STOCKAGE (CONVENTION)', storageLocationToString(co.inconvStorageLocationObject), false, ['/', 'storages', lastChild(co.inconvStorageLocationObject).storageId]] : undefined,
+      object.storageLocation ? ['STOCKAGE (ANNÉE)', storageLocationToString(co.storageLocationObject), false, ['/', 'storages', lastChild(co.storageLocationObject).storageId]] : undefined,
+      co.partOfLoanObject ? ['EMPRUNT PARENT', co.partOfLoanObject?.externalLoan?.loanTitle, object.partOfLoan === null || object.partOfLoan === undefined, ['/', 'external-loans', co.partOfLoanObject.externalLoan.externalLoanId]] : undefined,
+      object.reservedFor ? ['RÉSERVÉ POUR', (co.reservedFor.details.firstName + ' ' + co.reservedFor.details.lastName + ' (' + object.reservedFor + ')'), false] : undefined,
+      object.plannedUse ? ['UTILISATION PRÉVUE', object.plannedUse, false] : undefined,
+      object.depositPlace ? ['LIEU DE DÉPOSE', object.depositPlace, false] : undefined,
+      ['ÉTAT ACTUEL', statusToString(object.status), false],
+    ];
 
-    constructor(private service: ObjectsService, private route: ActivatedRoute, private auth: AuthService, private router: Router) {
-    }
+    return arr.filter(e => e);
+  }
 
-    logColumnsToDisplay = ['timestamp', 'target', 'user']
+  ngOnInit() {
+    this.route.paramMap.subscribe(params => {
+      this.id = Number.parseInt(params.get('id'), 10);
+      this.object$ = this.service.getObjectById(this.id)
+      this.objectData$ = this.object$.pipe(map(this.objectData))
+    });
+  }
 
-    get objectData(): [string, string, boolean, (string | number)[]?][] {
-        const object = this.object.object;
-        const objectType = this.object.objectType;
 
-        const arr: [string, string, boolean, (string | number)[]?][] = [
-            ['ASSET TAG', object.assetTag, false],
-            ['CATÉGORIE', objectType.name, false, ['/', 'object-types', object.objectTypeId]],
-            (object.description ?? objectType.description) ? ['DESCRIPTION', object.description ?? objectType.description, object.description === null || object.description === undefined] : undefined,
-            object.inconvStorageLocation ? ['STOCKAGE (CONVENTION)', storageLocationToString(this.object.inconvStorageLocationObject), false, ['/', 'storages', lastChild(this.object.inconvStorageLocationObject).storageId]] : undefined,
-            object.storageLocation ? ['STOCKAGE (ANNÉE)', storageLocationToString(this.object.storageLocationObject), false, ['/', 'storages', lastChild(this.object.storageLocationObject).storageId]] : undefined,
-            this.object.partOfLoanObject ? ['EMPRUNT PARENT', this.object.partOfLoanObject?.externalLoan?.loanTitle, object.partOfLoan === null || object.partOfLoan === undefined, ['/', 'external-loans', this.object.partOfLoanObject.externalLoan.externalLoanId]] : undefined,
-            object.reservedFor ? ['RÉSERVÉ POUR', (this.object.reservedFor.details.firstName + ' ' + this.object.reservedFor.details.lastName + ' (' + object.reservedFor + ')'), false] : undefined,
-            object.plannedUse ? ['UTILISATION PRÉVUE', object.plannedUse, false] : undefined,
-            object.depositPlace ? ['LIEU DE DÉPOSE', object.depositPlace, false] : undefined,
-            ['ÉTAT ACTUEL', statusToString(object.status), false],
-        ];
-
-        return arr.filter(e => e);
-    }
-
-    ngOnInit() {
-        this.route.paramMap.subscribe(map => {
-            this.id = Number.parseInt(map.get('id'), 10);
-            this.refresh();
-        });
-    }
-
-    refresh() {
-        this.service.getObjectById(this.id).subscribe(obj => this.object = obj);
-        this.logs = this.service.getObjectLogs(this.id);
-        this.loadComments();
-    }
-
-    dateFormat(_log: ObjectLogWithUser | CompleteObjectComment) {
-        const log = _log as any;
-        const date = log.objectLog ? log.objectLog.timestamp : log.objectComment.timestamp;
-
-        if (typeof date === 'string') {
-            return new Date(Date.parse(date)).toLocaleString();
-        } else {
-            return date.toLocaleString();
-        }
-    }
-
-    loadComments() {
-        this.comments = undefined;
-        this.service.getObjectComments(this.id).subscribe(res => this.comments = res);
-    }
-
-    sendComment() {
-        if (this.posting) {
-            return;
-        }
-
-        this.posting = true;
-        this.service.postObjectComment(this.id, this.comment).subscribe(success => {
-            this.posting = false;
-            this.comment = '';
-            this.loadComments();
-        }, err => this.posting = false);
-    }
-
-    delete() {
-        Swal.fire({
-            titleText: 'Es-tu certain de vouloir faire cela ?',
-            html: 'Cette opération placera l\'objet dans un état final "Remisé" dont il ne pourra plus jamais sortir.<br>Il disparaitra également ' +
-                'des listes d\'objets, mais pourra toujours être retrouvé avec son asset tag.<br>Son asset tag ne sera pas libéré.',
-            confirmButtonText: 'Oui',
-            cancelButtonText: 'Non',
-            showCancelButton: true, showConfirmButton: true
-        }).then(res => {
-            if (res.value === true) {
-                this.service
-                    .changeState(this.object.object.objectId, ObjectStatus.DELETED, this.auth.getToken().userId)
-                    .subscribe(succ => {
-                        Swal.fire(undefined, undefined, 'success');
-                        this.router.navigate(['/', 'object-types', this.object.object.objectTypeId]);
-                    }, err => {
-                        Swal.fire('Erreur inconnue', undefined, 'error');
-                        console.log(err);
-                    });
-            }
-        });
-    }
+  delete(object: CompleteObject) {
+    Swal.fire({
+      titleText: 'Es-tu certain de vouloir faire cela ?',
+      html: 'Cette opération placera l\'objet dans un état final "Remisé" dont il ne pourra plus jamais sortir.<br>Il disparaitra également ' +
+        'des listes d\'objets, mais pourra toujours être retrouvé avec son asset tag.<br>Son asset tag ne sera pas libéré.',
+      confirmButtonText: 'Oui',
+      cancelButtonText: 'Non',
+      showCancelButton: true, showConfirmButton: true
+    }).then(res => {
+      if (res.value === true) {
+        this.mutationService
+          .changeState(object.object.objectId, ObjectStatus.DELETED, this.auth.getToken().userId)
+          .subscribe(succ => {
+            Swal.fire(undefined, undefined, 'success');
+            this.router.navigate(['/', 'object-types', object.object.objectTypeId]);
+          }, err => {
+            Swal.fire('Erreur inconnue', undefined, 'error');
+            console.log(err);
+          });
+      }
+    });
+  }
 }

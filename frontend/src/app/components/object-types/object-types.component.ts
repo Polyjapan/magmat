@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {Observable} from 'rxjs';
 import {ObjectTypeTree} from '../../data/object-type';
-import {ObjectTypesService} from '../../services/object-types.service';
+import {ObjectTypesService} from '../../services/stateful/object-types.service';
 import {MatDialog} from '@angular/material/dialog';
 import {Router} from '@angular/router';
 import {CreateObjectTypeComponent} from './create-object-type/create-object-type.component';
@@ -18,15 +18,11 @@ export class ObjectTypesComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.objectTypes$ = this.objectTypes.getObjectTypes();
+    this.objectTypes$ = this.objectTypes.trees$;
   }
 
   create() {
     this.dialog.open(CreateObjectTypeComponent);
-  }
-
-  refresh() {
-    this.objectTypes.refresh();
   }
 
   goTo($event: number) {

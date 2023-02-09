@@ -1,9 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import {UserProfile} from '../../data/user';
 import {CompleteObject, statusToString} from '../../data/object';
-import {ObjectsService} from '../../services/objects.service';
+import {ObjectsService} from '../../services/stateful/objects.service';
 import {map, switchMap} from 'rxjs/operators';
 import {ObjectLogWithObject} from '../../data/object-log';
+import { UserLogsService } from "./user-logs.service";
 
 @Component({
   selector: 'app-internal-loans',
@@ -17,7 +18,7 @@ export class UserLogsComponent implements OnInit {
   history: ObjectLogWithObject[];
   statusToString = statusToString;
 
-  constructor(private backend: ObjectsService) {
+  constructor(private backend: UserLogsService) {
   }
 
   ngOnInit() {

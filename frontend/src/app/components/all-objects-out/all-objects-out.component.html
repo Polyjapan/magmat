@@ -1,5 +1,8 @@
 <h1>Liste des objets sortis</h1>
 <p>Ceci est la liste de tous les objets actuellement en prêt, perdus ou déposés.</p>
 
-<mat-spinner *ngIf="!loans"></mat-spinner>
-<app-objects-list *ngIf="loans" [objects]="loans"></app-objects-list>
+<ng-template #loading>
+  <mat-spinner></mat-spinner>
+</ng-template>
+
+<app-objects-list *ngIf="objects$ | async as objects ; else loading" [objects]="objects"></app-objects-list>

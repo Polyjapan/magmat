@@ -1,8 +1,9 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import Swal from "sweetalert2";
-import {StorageLocationsService} from '../../../services/storage-locations.service';
-import {ObjectsService} from '../../../services/objects.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {Observable} from 'rxjs';
+import { RefreshAllService } from "../../../services/refresh-all.service";
 
 @Component({
   selector: 'app-quickmove',
@@ -17,7 +18,7 @@ export class QuickmoveComponent implements OnInit {
   moveAll = false;
   sending = false;
 
-  constructor(private sl: StorageLocationsService, private objectsService: ObjectsService) { }
+  constructor(private sl: StorageLocationsService, private objectsService: ObjectsService, private refreshService: RefreshAllService) { }
 
   ngOnInit() {
   }
@@ -33,7 +34,7 @@ export class QuickmoveComponent implements OnInit {
 
     this.sl.moveItems(this.locationId, quickMoveItems, this.moveAll)
       .subscribe(res => {
-        this.objectsService.refreshObjects();
+        this.refreshService.refresh();
         this.sending = false;
         this.quickMoveArea = '';
         this.moveAll = false;

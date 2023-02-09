@@ -1,11 +1,12 @@
 package controllers
 
-import ch.japanimpact.auth.api.UserProfile
-import data.{CompleteObjectComment, ObjectLogWithUser, ObjectStatus, SingleObjectJson}
+import data.{CompleteObjectComment, ObjectStatus, SingleObjectJson}
 import models.{ObjectsModel, StorageModel, UsersModel}
 import play.api.Configuration
 import play.api.libs.json.Json
 import play.api.mvc.{AbstractController, Action, AnyContent, ControllerComponents}
+import services.SSEService
+import services.SSEService.ObjectStatusChange
 import utils.AuthenticationPostfix._
 import utils.TidyingAlgo
 
@@ -16,7 +17,7 @@ import scala.concurrent.{ExecutionContext, Future}
 /**
  * @author Louis Vialar
  */
-class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, users: UsersModel, storage: StorageModel)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
+class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel, users: UsersModel, storage: StorageModel, sse: SSEService)(implicit ec: ExecutionContext, conf: Configuration, clock: Clock) extends AbstractController(cc) {
   def getAll(eventId: Option[Int]) = Action.async { req =>
     model.getAll(eventId).map(r => Ok(Json.toJson(r)))
   }.requiresAuthentication
@@ -125,7 +126,10 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
           Future(BadRequest)
         } else {
           model.changeState(req.eventId, id, userId, adminId, targetState, signature).map(res => {
-            if (res) Ok else BadRequest
+            if (res) {
+              this.sse.send(ObjectStatusChange(id, targetState, userId))
+              Ok
+            } else BadRequest
           })
         }
       case None => Future(NotFound)
@@ -162,8 +166,13 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       val (toInsert, notInserted) = req.body.partition(elem => elem.assetTag.isEmpty || !existingTagsSet(elem.assetTag.get))
 
       if (toInsert.nonEmpty) {
-        model.insertAll(toInsert, eventId).map(res => (res zip toInsert)
-          .map { case (id, obj) => obj.copy(objectId = Some(id)) })
+        model.insertAll(toInsert, eventId)
+          .map(res => (res zip toInsert)
+            .map {
+              case (id, obj) =>
+                sse.notifyObjectChanged(id, eventId)
+                obj.copy(objectId = Some(id))
+            })
           .map(inserted => Ok(Json.obj("inserted" -> inserted, "notInserted" -> notInserted)))
       } else {
         Future(Ok(Json.obj("inserted" -> List.empty[SingleObjectJson], "notInserted" -> notInserted)))
@@ -181,7 +190,11 @@ class ObjectsController @Inject()(cc: ControllerComponents, model: ObjectsModel,
       case Some(future) => future.flatMap {
         case Some(obj) if obj.objectId.get != id => Future(BadRequest("Asset tag déjà utilisé"))
         case _ =>
-          model.updateOne(id, req.body, eventId).map(_ => Ok)
+          model.updateOne(id, req.body, eventId)
+            .map(_ => {
+              sse.notifyObjectChanged(id, eventId)
+              Ok
+            })
       }
     }
   }.requiresAuthentication

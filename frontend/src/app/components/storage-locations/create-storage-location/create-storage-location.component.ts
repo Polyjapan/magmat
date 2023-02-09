@@ -1,9 +1,9 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import {objectHasParentLocation, Storage, StorageTree} from '../../../data/storage-location';
 import {MAT_DIALOG_DATA, MatDialogRef} from '@angular/material/dialog';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
 import Swal from 'sweetalert2';
-import {EventsService} from '../../../services/events.service';
+import {EventsService} from '../../../services/stateful/events.service';
 
 @Component({
   selector: 'app-create-storage-location',
@@ -48,7 +48,7 @@ export class CreateStorageLocationComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.events.getCurrentEventId().subscribe(ev => this.eventId = ev);
+    this.events.currentEventId$.subscribe(ev => this.eventId = ev);
   }
 
   submit($event) {
@@ -78,7 +78,6 @@ export class CreateStorageLocationComponent implements OnInit {
 
     this.service.createUpdateStorage(this.storageLocation)
       .subscribe(succ => {
-        this.service.refresh();
         this.dialogRef.close();
         Swal.fire('Emplacement ' + (this.isUpdate ? 'modifié' : 'créé'), 'L\'emplacement de stockage a bien été ' + (this.isUpdate ? 'modifié' : 'créé') + '.', 'success');
       }, err => {

@@ -1,7 +1,8 @@
 import {Component, OnInit} from '@angular/core';
 import {Observable} from 'rxjs';
-import {EventsService} from '../../../services/events.service';
+import {EventsService} from '../../../services/stateful/events.service';
 import {Event} from '../../../data/event';
+import { take } from "rxjs/operators";
 
 @Component({
   selector: 'app-event-selector',
@@ -13,15 +14,15 @@ export class EventSelectorComponent implements OnInit {
   event: Observable<Event>;
 
   constructor(private events: EventsService) {
-    this.events$ = events.getEvents();
-    this.event = events.getCurrentEvent();
+    this.events$ = events.events$
+    this.event = events.currentEvent$
   }
 
   ngOnInit() {
   }
 
   async switch(id: number) {
-    await this.events.switchEvent(id).toPromise()
+    await this.events.switchEvent(id).pipe(take(1)).toPromise()
     // window.location.reload()
   }
 }

@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {StorageLocationsService} from '../../services/storage-locations.service';
+import {StorageLocationsService} from '../../services/stateful/storage-locations.service';
 import {Observable} from 'rxjs';
 import {StorageTree} from '../../data/storage-location';
 import {MatDialog} from '@angular/material/dialog';
@@ -19,15 +19,11 @@ export class StorageLocationsComponent implements OnInit {
   }
 
   ngOnInit() {
-    this.storageLocations = this.locations.getStorages();
+    this.storageLocations = this.locations.trees$;
   }
 
   create() {
     this.dialog.open(CreateStorageLocationComponent);
-  }
-
-  refresh() {
-    this.locations.refresh();
   }
 
   goTo($event: number) {

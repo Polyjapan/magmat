@@ -73,3 +73,5 @@ PUT           /storage/:id                              controllers.StorageContr
 DELETE        /storage/:id                              controllers.StorageController.delete(id: Int)
 +nocsrf
 POST          /storage/move/:id                         controllers.StorageController.moveItems(id: Int)
+
+GET           /sse/subscribe                            controllers.SSEController.subscribe(token: Option[String] ?= None)

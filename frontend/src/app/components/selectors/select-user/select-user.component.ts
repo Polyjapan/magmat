@@ -1,5 +1,5 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
-import {ProfileService} from '../../../services/profile.service';
+import {ViewUserService} from '../../users/view-user/view-user.service';
 import {UserProfile} from '../../../data/user';
 import {merge, Observable, partition} from 'rxjs';
 import {debounceTime, distinctUntilChanged, filter, map, startWith, switchMap, tap} from 'rxjs/operators';
@@ -9,7 +9,7 @@ import {GuestsService} from '../../../services/guests.service';
 import has = Reflect.has;
 import {of} from 'rxjs/internal/observable/of';
 import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.component';
-import {UsersService} from '../../../services/users.service';
+import {UsersService} from '../../../services/stateful/users.service';
 
 @Component({
   selector: 'app-select-user',
@@ -76,7 +76,7 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
 
   getPossibleValues(): Observable<(UserProfile | Guest)[]> {
     if (this.allowGuests) {
-      return this.service.getUsers()
+      return this.service.users$
         .pipe(
           switchMap(users =>
             this.guests.getGuests()
@@ -88,7 +88,7 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
           )
         );
     } else {
-      return this.service.getUsers();
+      return this.service.users$;
     }
   }
 

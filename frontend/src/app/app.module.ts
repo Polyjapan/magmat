@@ -79,6 +79,8 @@ import { ObjectTypeTreeComponent } from './components/utils/object-type-tree/obj
 import { AllObjectsComponent } from './components/object-types/all-objects/all-objects.component';
 import {MatPaginatorModule} from '@angular/material/paginator';
 import {DragDropModule} from '@angular/cdk/drag-drop';
+import { ObjectCommentsComponent } from './components/object-types/object/object-comments/object-comments.component';
+import { ObjectLogsComponent } from './components/object-types/object/object-logs/object-logs.component';
 
 export function tokenGetter() {
   return localStorage.getItem('id_token');
@@ -127,12 +129,12 @@ export function tokenGetter() {
     StatusLabelComponent,
     LocationTreeComponent,
     ObjectTypeTreeComponent,
-    AllObjectsComponent
-  ],
-  entryComponents: [
+    AllObjectsComponent,
     CreateStorageLocationComponent,
     CreateGuestComponent,
     SignatureModalComponent,
+    ObjectCommentsComponent,
+    ObjectLogsComponent,
   ],
   imports: [
     BrowserModule,

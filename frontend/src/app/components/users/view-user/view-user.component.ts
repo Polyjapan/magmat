@@ -4,7 +4,7 @@ import {Observable} from 'rxjs';
 import {map, switchMap} from 'rxjs/operators';
 import {Guest} from '../../../data/guest';
 import {GuestsService} from '../../../services/guests.service';
-import {ProfileService} from '../../../services/profile.service';
+import {ViewUserService} from './view-user.service';
 import {UserProfile} from '../../../data/user';
 
 @Component({
@@ -19,7 +19,7 @@ export class ViewUserComponent implements OnInit {
   user$: Observable<UserProfile>;
 
   constructor(private guests: GuestsService,
-              private users: ProfileService,
+              private users: ViewUserService,
               private ar: ActivatedRoute) {
   }
 

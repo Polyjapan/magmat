@@ -1,13 +1,13 @@
 import {Component, Inject} from '@angular/core';
-import {ObjectsService} from '../../../services/objects.service';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
-import {LoansService} from '../../../services/loans.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
+import {LoansService} from '../../../services/stateful/loans.service';
 import {lastChild, ObjectType, ObjectTypeAncestry, objectTypeToString} from '../../../data/object-type';
 import {externalLoanToString} from '../../../data/external-loan';
 import {MAT_DIALOG_DATA, MatDialog, MatDialogRef} from '@angular/material/dialog';
 import Swal from 'sweetalert2';
 import {ActivatedRoute, Router} from '@angular/router';
-import {ObjectTypesService} from '../../../services/object-types.service';
+import {ObjectTypesService} from '../../../services/stateful/object-types.service';
 
 
 @Component({
@@ -54,7 +54,6 @@ export class CreateObjectTypeComponent {
 
     this.sending = true;
     this.objectTypes.createOrUpdateObjectType(this.objectType).subscribe(id => {
-      this.objectTypes.refresh();
       switch (next) {
         case 'stay':
           Swal.fire({title: 'Objet ajouté', icon: 'success', timer: 3000, timerProgressBar: true}).then(() => {

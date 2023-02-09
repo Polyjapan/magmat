@@ -2,7 +2,7 @@ import {Component, Input} from '@angular/core';
 import {lastChild, objectHasParentObjectType, ObjectTypeAncestry, objectTypeToString} from '../../../data/object-type';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
-import {ObjectTypesService} from '../../../services/object-types.service';
+import {ObjectTypesService} from '../../../services/stateful/object-types.service';
 import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.component';
 
 @Component({
@@ -23,7 +23,7 @@ export class SelectObjectTypeComponent extends AbstractSelectorComponent<ObjectT
   }
 
   getPossibleValues(): Observable<ObjectTypeAncestry[]> {
-    return this.os.getObjectTypesWithParents()
+    return this.os.typesWithParents$
       .pipe(map(m => Array.from(m.values())
         .filter(el => !this.excludeChildrenOf || !objectHasParentObjectType(el, this.excludeChildrenOf))));
   }

@@ -47,11 +47,10 @@ export class CompleteObject {
   partOfLoanObject?: CompleteExternalLoan;
 
   reservedFor?: UserProfile;
-}
 
-export class CompleteObjectWithUser {
-  object: CompleteObject;
-  user: UserProfile;
+  user?: UserProfile
+
+  userId?: number;
 }
 
 export class ObjectCreateResult {

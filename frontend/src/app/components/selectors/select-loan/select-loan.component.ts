@@ -1,6 +1,6 @@
 import {Component, EventEmitter, Input, OnInit, Output} from '@angular/core';
 import {CompleteExternalLoan} from '../../../data/external-loan';
-import {LoansService} from '../../../services/loans.service';
+import {LoansService} from '../../../services/stateful/loans.service';
 import {Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {AbstractSelectorComponent} from '../abstract-selector/abstract-selector.component';
@@ -31,7 +31,7 @@ export class SelectLoanComponent extends AbstractSelectorComponent<CompleteExter
   }
 
   getPossibleValues(): Observable<CompleteExternalLoan[]> {
-    return this.service.getLoans();
+    return this.service.loans$;
   }
 
   toSearchableString(v: CompleteExternalLoan): string {

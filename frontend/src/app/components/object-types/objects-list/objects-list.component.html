@@ -13,7 +13,10 @@
 
   <ng-container matColumnDef="status">
     <th mat-header-cell *matHeaderCellDef mat-sort-header> Etat </th>
-    <td mat-cell *matCellDef="let element"> <app-status-label [status]="element.object.status"></app-status-label> </td>
+    <td mat-cell *matCellDef="let element">
+      <app-status-label [status]="element.object.status"></app-status-label>
+
+    </td>
   </ng-container>
 
   <ng-container matColumnDef="name">
@@ -44,12 +47,12 @@
   <ng-container matColumnDef="actions">
     <th mat-header-cell *matHeaderCellDef> </th>
     <td mat-cell *matCellDef="let element">
-      <button mat-icon-button [routerLink]="['/', 'objects', 'update', getObjectId(element)]"><mat-icon>edit</mat-icon></button>
+      <button mat-icon-button [routerLink]="['/', 'objects', 'update', element.object.objectId]"><mat-icon>edit</mat-icon></button>
     </td>
   </ng-container>
 
   <tr mat-header-row *matHeaderRowDef="columns"></tr>
-  <tr class="hover" mat-row *matRowDef="let row; columns: columns;" [routerLink]="['/', 'objects', getObjectId(row)]"></tr>
+  <tr class="hover" mat-row *matRowDef="let row; columns: columns;" [routerLink]="['/', 'objects', row.object.objectId]"></tr>
 
 </table>
 <mat-paginator [class.mat-elevation-z2]="!fullWidth"  [pageSizeOptions]="[50, 100, 200]" showFirstLastButtons style="position: sticky;"></mat-paginator>

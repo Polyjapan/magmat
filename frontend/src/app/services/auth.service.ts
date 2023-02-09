@@ -67,8 +67,12 @@ export class AuthService {
     window.location.replace(environment.auth.apiurl + '/logout?app=' + environment.auth.clientId);
   }
 
+  get rawToken() {
+    return localStorage.getItem('id_token')
+  }
+
   public getToken(): UserSession {
-    const token = localStorage.getItem('id_token');
+    const token = this.rawToken
     const decoded = this.jwtHelper.decodeToken(token);
 
     if (decoded && decoded.user) {

@@ -48,11 +48,7 @@ export class ObjectTypeTreeComponent implements OnInit {
   }
 
   treeHasChild = (_, node: ObjectTypeTree) => node.children.length > 0
-  ancestryHasChild = (_, node: ObjectTypeAncestry) => {
-    console.log(" has child ? ")
-    console.log(node)
-    return node.child != undefined
-  }
+  ancestryHasChild = (_, node: ObjectTypeAncestry) => node.child != undefined
 
   ngOnChanges(changes: SimpleChanges): void {
     this.reloadTree();

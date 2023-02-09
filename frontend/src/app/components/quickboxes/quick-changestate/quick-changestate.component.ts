@@ -2,11 +2,12 @@ import {Component, EventEmitter, Input, OnInit, Output, ViewChild} from '@angula
 import Swal from 'sweetalert2';
 import {CompleteObject, ObjectStatus, statusToString} from '../../../data/object';
 import {UserProfile} from '../../../data/user';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import { MatDialog } from '@angular/material/dialog';
 import {requestSignature} from '../../../services/signature';
 import {storageLocationToString} from '../../../data/storage-location';
 import {SelectUserComponent} from '../../selectors/select-user/select-user.component';
+import { ObjectsMutationService } from "../../../services/objects-mutation.service";
 
 @Component({
   selector: 'app-quick-changestate',
@@ -19,12 +20,11 @@ export class QuickChangestateComponent implements OnInit {
 
   @ViewChild('selectUserComponent') userSelector: SelectUserComponent;
 
-  statusToString = statusToString;
   ObjectStatus = ObjectStatus;
   lendTo: UserProfile;
   sending = false;
 
-  constructor(private service: ObjectsService, private dialog: MatDialog) {
+  constructor(private service: ObjectsMutationService, private dialog: MatDialog) {
   }
 
 

@@ -1,6 +1,6 @@
 import {Component, Inject, OnInit} from '@angular/core';
 import { MAT_DIALOG_DATA, MatDialogRef } from '@angular/material/dialog';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
 
 @Component({
   selector: 'app-signature-modal',

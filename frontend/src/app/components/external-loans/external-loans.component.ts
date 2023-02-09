@@ -1,7 +1,7 @@
 import {Component, OnInit} from '@angular/core';
 import {Observable} from 'rxjs';
 import {CompleteExternalLoan, LoanState, loanStateToText, loanStateToColor} from '../../data/external-loan';
-import {LoansService} from '../../services/loans.service';
+import {LoansService} from '../../services/stateful/loans.service';
 
 @Component({
   selector: 'app-external-loans',
@@ -14,7 +14,7 @@ export class ExternalLoansComponent implements OnInit {
   constructor(private ls: LoansService) { }
 
   ngOnInit() {
-    this.loans = this.ls.getLoans();
+    this.loans = this.ls.loans$;
   }
 
   loanStateToText = loanStateToText;

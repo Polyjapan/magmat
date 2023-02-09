@@ -1,23 +1,22 @@
-import {Component, OnInit} from '@angular/core';
-import {ActivatedRoute, Router} from '@angular/router';
-import {ObjectsService} from '../../../services/objects.service';
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { ObjectsService } from '../../../services/stateful/objects.service';
 import {
-  objectHasParentObjectType,
   lastChild,
+  objectHasParentObjectType,
   ObjectType,
   ObjectTypeAncestry,
-  ObjectTypeTree,
-  objectTypeToString
+  objectTypeToString,
+  ObjectTypeTree
 } from '../../../data/object-type';
-import {Storage, storageLocationToString, StorageTree} from '../../../data/storage-location';
-import {CompleteObject} from '../../../data/object';
+import { storageLocationToString } from '../../../data/storage-location';
+import { CompleteObject } from '../../../data/object';
 import Swal from 'sweetalert2';
-import {ObjectTypesService} from '../../../services/object-types.service';
-import {Observable, partition} from 'rxjs';
-import {map, switchMap} from 'rxjs/operators';
-import {CreateStorageLocationComponent} from '../../storage-locations/create-storage-location/create-storage-location.component';
-import {MatDialog} from '@angular/material/dialog';
-import {CreateObjectTypeComponent} from '../create-object-type/create-object-type.component';
+import { ObjectTypesService } from '../../../services/stateful/object-types.service';
+import { Observable, partition } from 'rxjs';
+import { map, switchMap } from 'rxjs/operators';
+import { MatDialog } from '@angular/material/dialog';
+import { CreateObjectTypeComponent } from '../create-object-type/create-object-type.component';
 
 @Component({
   selector: 'app-show-object-type',
@@ -64,12 +63,12 @@ export class ShowObjectTypeComponent implements OnInit {
     this.tree$ = succ.pipe();
     this.errors = err.pipe(map(_ => 'Impossible de trouver cette catégorie.'));
 
-    this.items$ = this.tree$.pipe(switchMap(v => this.objectsService.getObjects()
+    this.items$ = this.tree$.pipe(switchMap(v => this.objectsService.objects$
       .pipe(map(allObj =>
         allObj.filter(o =>
           this.displayAll ?
             objectHasParentObjectType(o.objectTypeAncestry, this.id) :
-            o.object.objectTypeId === this.id )
+            o.object.objectTypeId === this.id)
       ))));
     this.parents$ = this.objectTypeService.getObjectTypeWithParents(this.id);
   }
@@ -85,15 +84,15 @@ export class ShowObjectTypeComponent implements OnInit {
   }
 
   update(ot: ObjectTypeAncestry) {
-    const tree = {...lastChild(ot) };
-    this.dialog.open(CreateObjectTypeComponent, {data: tree});
+    const tree = { ...lastChild(ot) };
+    this.dialog.open(CreateObjectTypeComponent, { data: tree });
   }
 
   create(ot: ObjectTypeAncestry) {
     const tree = lastChild(ot);
     const data = new ObjectType();
     data.parentObjectTypeId = tree.objectTypeId;
-    this.dialog.open(CreateObjectTypeComponent, {data});
+    this.dialog.open(CreateObjectTypeComponent, { data });
   }
 
 
@@ -115,7 +114,7 @@ export class ShowObjectTypeComponent implements OnInit {
 
         this.objectTypeService.deleteObjectType(this.id)
           .subscribe(_ => {
-            this.router.navigate(['..'], {relativeTo: this.route});
+            this.router.navigate(['..'], { relativeTo: this.route });
           }, _ => {
             Swal.fire('Oups', 'On dirait que ça ne fonctionne pas. Réessayez plus tard', 'error');
             this.deleting = false;

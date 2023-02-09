@@ -1,12 +1,12 @@
-import {AfterViewInit, Component, Input, OnChanges, ViewChild} from '@angular/core';
-import {CompleteObject, CompleteObjectWithUser, statusToString} from '../../../data/object';
-import {storageLocationToString} from 'src/app/data/storage-location';
-import {MatSort} from '@angular/material/sort';
-import {MatTableDataSource} from '@angular/material/table';
-import {MatPaginator} from '@angular/material/paginator';
-import {normalizeString} from '../../../utils/normalize.string';
-import {Event} from '../../../data/event';
-import {EventsService} from '../../../services/events.service';
+import { AfterViewInit, Component, Input, OnChanges, ViewChild } from '@angular/core';
+import { CompleteObject, ObjectStatus, statusToString } from '../../../data/object';
+import { storageLocationToString } from 'src/app/data/storage-location';
+import { MatSort } from '@angular/material/sort';
+import { MatTableDataSource } from '@angular/material/table';
+import { MatPaginator } from '@angular/material/paginator';
+import { normalizeString } from '../../../utils/normalize.string';
+import { Event } from '../../../data/event';
+import { EventsService } from '../../../services/stateful/events.service';
 
 @Component({
   selector: 'app-objects-list',
@@ -15,31 +15,42 @@ import {EventsService} from '../../../services/events.service';
 })
 export class ObjectsListComponent implements OnChanges, AfterViewInit {
   @Input() fullWidth: boolean = false;
-  @Input() objects: (CompleteObject | CompleteObjectWithUser)[];
+  @Input() objects: CompleteObject[];
 
   @ViewChild(MatPaginator) paginator: MatPaginator;
-  @ViewChild(MatSort, {static: true}) sort: MatSort;
-  dataSource: MatTableDataSource<CompleteObject | CompleteObjectWithUser> = new MatTableDataSource();
+  @ViewChild(MatSort, { static: true }) sort: MatSort;
+  dataSource: MatTableDataSource<CompleteObject> = new MatTableDataSource();
 
   event: Event;
 
   constructor(private eventService: EventsService) {
-    eventService.getCurrentEvent().subscribe(ev => this.event = ev);
+    eventService.currentEvent$.subscribe(ev => this.event = ev);
   }
 
   get columns() {
-    const hasUsers = this.objects.filter(o => (o instanceof CompleteObjectWithUser || (o as any).user)).length > 0;
-    const base = ['assetTag', 'name', 'storage'];
+    const hasUsers = this.objects.filter(o => !!o.user).length > 0;
+    const hasStorage = this.objects.filter(o => !!o.storageLocationObject || !!o.inconvStorageLocationObject).length > 0;
+    const hasPlannedUse = this.event && this.objects.filter(o => !!o.object.plannedUse).length > 0;
+    const hasReservedFor = this.event && this.objects.filter(o => !!o.reservedFor).length > 0;
+    const base = ['assetTag', 'name'];
 
-    if (this.event) {
-      base.push('plannedUse', 'reservedFor')
+    if (hasStorage) {
+      base.push('storage')
     }
 
+    if (hasPlannedUse) {
+      base.push('plannedUse')
+    }
+
+    if (hasReservedFor) {
+      base.push('reservedFor')
+    }
+
+    base.push('status');
     if (hasUsers) {
       base.push('user');
     }
 
-    base.push('status');
     // TODO: Louis - I don't like the look of this table with the edit button, but if edit is frequently needed then we may need to put this back
     // base.push('actions');
     return base;
@@ -52,9 +63,9 @@ export class ObjectsListComponent implements OnChanges, AfterViewInit {
 
     this.dataSource.sortingDataAccessor = this.dataAccessor;
 
-    this.dataSource.filterPredicate = (data: (CompleteObject | CompleteObjectWithUser), search: string) => {
+    this.dataSource.filterPredicate = (data: CompleteObject, search: string) => {
       const query = normalizeString(search.toLowerCase());
-      const element = normalizeString(['assetTag', 'name', 'reservedFor'].map(s => this.dataAccessor(data, s)).join(' ').toLowerCase());
+      const element = normalizeString(['assetTag', 'name', 'reservedFor', 'user'].map(s => this.dataAccessor(data, s)).join(' ').toLowerCase());
 
       return !query.split(' ').find(word => !element.includes(word))
     }
@@ -63,22 +74,11 @@ export class ObjectsListComponent implements OnChanges, AfterViewInit {
     this.ngOnChanges({});
   }
 
-  getObjectId(o: (CompleteObject | CompleteObjectWithUser)) {
-    const object = (o instanceof CompleteObjectWithUser || (o as any).user) ? ((o as CompleteObjectWithUser).object) : o as CompleteObject;
-    return object.object.objectId;
-  }
-
-  dataAccessor(_o: (CompleteObject | CompleteObjectWithUser), column: string): string {
-    if (_o instanceof CompleteObjectWithUser || (_o as any).user) {
-      if (column === 'user') {
-        const user = (_o as CompleteObjectWithUser).user;
-        return user.details.firstName + ' ' + user.details.lastName;
-      }
-      return this.dataAccessor((_o as CompleteObjectWithUser).object, column);
-    }
-    const o = _o as CompleteObject;
-
+  dataAccessor(o: CompleteObject, column: string): string {
     switch (column) {
+      case 'user':
+        const user = o.user;
+        return user && (o.object.status === ObjectStatus.OUT || o.object.status === ObjectStatus.RESTING) ? user.details.firstName + ' ' + user.details.lastName : '';
       case 'status':
         // Only for sorting
         return statusToString(o.object.status);

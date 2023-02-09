@@ -1,10 +1,10 @@
 import {Component, OnInit} from '@angular/core';
 import {ExternalLoan, LoanState, LoanStates, loanStateToText} from '../../../data/external-loan';
 import {Guest} from '../../../data/guest';
-import {LoansService} from '../../../services/loans.service';
+import {LoansService} from '../../../services/stateful/loans.service';
 import {Router} from '@angular/router';
 import Swal from 'sweetalert2';
-import {EventsService} from '../../../services/events.service';
+import {EventsService} from '../../../services/stateful/events.service';
 
 @Component({
   selector: 'app-create-external-loan',
@@ -31,7 +31,7 @@ export class CreateExternalLoanComponent implements OnInit {
 
   ngOnInit() {
     this.resetLoan();
-    this.es.getCurrentEvent().subscribe(ev => {
+    this.es.currentEvent$.subscribe(ev => {
       if (ev) {
         this.eventId = ev.id;
       }
@@ -58,7 +58,6 @@ export class CreateExternalLoanComponent implements OnInit {
     this.ls.createLoan(this.loan)
       .subscribe(res => {
         if (type === 'see') {
-          this.ls.forceRefreshLoans();
           this.router.navigate(['/', 'external-loans', res]);
         } else {
           Swal.fire('Prêt créé', undefined, 'success');

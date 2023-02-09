@@ -1,10 +1,12 @@
 import {Component, EventEmitter, Input, OnChanges, OnInit, Output, SimpleChanges} from '@angular/core';
 import Swal from 'sweetalert2';
 import {ObjectStatus, SingleObject} from '../../../data/object';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {ObjectType} from '../../../data/object-type';
-import {EventsService} from '../../../services/events.service';
+import {EventsService} from '../../../services/stateful/events.service';
 import {Event} from '../../../data/event';
+import { QuickItemCreateService } from "./quick-item-create.service";
+import { ObjectsMutationService } from "../../../services/objects-mutation.service";
 
 @Component({
   selector: 'app-quick-item-create',
@@ -27,18 +29,18 @@ export class QuickItemCreateComponent implements OnChanges {
   event: Event = undefined;
 
 
-  updatePrefix(prefix: string) {
+  async updatePrefix(prefix: string) {
     this.prefix = prefix;
-    this.objectsService.getNextSuffix(this.objectType.objectTypeId, this.prefix).subscribe(n => this.suffixStart = n);
+    this.suffixStart = await this.qicService.getNextSuffix(this.objectType.objectTypeId, this.prefix)
   }
 
-  constructor(private objectsService: ObjectsService, eventsService: EventsService) {
-    eventsService.getCurrentEvent().subscribe(ev => this.event = ev);
+  constructor(private objectsService: ObjectsMutationService, eventsService: EventsService, private qicService: QuickItemCreateService) {
+    eventsService.currentEvent$.subscribe(ev => this.event = ev);
   }
 
-  ngOnChanges(changes: SimpleChanges) {
+  async ngOnChanges(changes: SimpleChanges) {
     if (changes.objectType && ((this.prefix ?? '')  === '')) {
-      this.updatePrefix('');
+      void this.updatePrefix('');
     }
   }
 
@@ -67,7 +69,6 @@ export class QuickItemCreateComponent implements OnChanges {
     }
 
     this.objectsService.createObjects(objects, this.event?.id).subscribe(result => {
-      this.objectsService.refreshObjects();
       if (result.inserted.length !== 0) {
         this.createSuccess.emit(result.inserted);
       }

@@ -1,0 +1,72 @@
+
+<mat-card>
+  <mat-card-header>
+    <mat-card-title>Historique de l'objet</mat-card-title>
+  </mat-card-header>
+
+
+  <ng-template #loadingLogs>
+
+    <mat-card-content>
+      <mat-progress-bar mode="indeterminate"></mat-progress-bar>
+    </mat-card-content>
+  </ng-template>
+
+  <ng-container *ngIf="(logs$ | async) ; let logs ; else loadingLogs">
+    <ng-template #nolog>
+      <mat-card-content>
+        <p>
+          <br>
+          <i>Aucun historique pour cet objet.</i>
+        </p>
+      </mat-card-content>
+    </ng-template>
+
+    <table mat-table [dataSource]="logs" *ngIf="logs.length > 0 ; else nolog" class="fullWidth"
+           multiTemplateDataRows>
+      <ng-container matColumnDef="expandedDetails">
+        <td mat-cell *matCellDef="let elem" [attr.colspan]="logColumnsToDisplay.length">
+          <div style="overflow: hidden;" [@detailExpand]="elem === expandedElement ? 'expanded' : 'collapsed'">
+            <ul style="list-style: none">
+
+              <li>Etat initial :
+                <app-status-label [status]="elem.objectLog.sourceState"></app-status-label>
+              </li>
+              <li>Administrateur : <b>{{elem.changedBy.details.firstName}} {{elem.changedBy.details.lastName}}</b>
+              </li>
+              <li *ngIf="elem.objectLog.signature">Signature : <img *ngIf="elem.objectLog.signature"
+                                                                    [src]="elem.objectLog.signature"
+                                                                    width="400px"/>
+              </li>
+            </ul>
+          </div>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="timestamp">
+        <th mat-header-cell *matHeaderCellDef> Heure</th>
+        <td mat-cell *matCellDef="let elem"> {{elem.objectLog.timestamp | date:'dd.MM.yyyy HH:mm:ss'}} </td>
+      </ng-container>
+
+      <ng-container matColumnDef="target">
+        <th mat-header-cell *matHeaderCellDef> Nouvel état</th>
+        <td mat-cell *matCellDef="let elem">
+          <app-status-label [status]="elem.objectLog.targetState"></app-status-label>
+        </td>
+      </ng-container>
+
+      <ng-container matColumnDef="user">
+        <th mat-header-cell *matHeaderCellDef> Utilisateur</th>
+        <td mat-cell *matCellDef="let elem"><b>{{elem.user.details.firstName}} {{elem.user.details.lastName}}</b>
+          ({{elem.user.details.phoneNumber}})
+        </td>
+      </ng-container>
+
+
+      <tr mat-header-row *matHeaderRowDef="logColumnsToDisplay"></tr>
+      <tr mat-row *matRowDef="let row; columns: logColumnsToDisplay;" class="hover"
+          (click)="expandedElement === row ? expandedElement = null : expandedElement = row"></tr>
+      <tr mat-row *matRowDef="let row; columns: ['expandedDetails'];" class="log-row"></tr>
+    </table>
+  </ng-container>
+</mat-card>

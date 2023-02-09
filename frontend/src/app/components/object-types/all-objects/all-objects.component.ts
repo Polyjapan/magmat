@@ -1,5 +1,5 @@
 import {Component, OnInit} from '@angular/core';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {CompleteObject} from '../../../data/object';
 import {Observable} from 'rxjs';
 import {debounceTime} from 'rxjs/operators';
@@ -14,7 +14,7 @@ export class AllObjectsComponent implements OnInit {
 
   constructor(private objects: ObjectsService) {
     // adding the debounce gives some time to the browser to render the page before the content arrives, making the experience more fluid
-    this.objects$ = objects.getObjects().pipe(debounceTime(200));
+    this.objects$ = objects.objects$.pipe(debounceTime(200));
   }
 
   ngOnInit(): void {

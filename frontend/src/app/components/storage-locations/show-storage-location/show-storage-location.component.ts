@@ -1,6 +1,6 @@
 import {Component, OnInit} from '@angular/core';
 import {ActivatedRoute, Router} from '@angular/router';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
 import {
   lastChild,
   objectHasParentLocation,
@@ -9,7 +9,7 @@ import {
   StorageTree
 } from '../../../data/storage-location';
 import {CompleteObject} from '../../../data/object';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {BehaviorSubject, Observable, partition, ReplaySubject, Subject} from 'rxjs';
 import Swal from 'sweetalert2';
 import {CreateStorageLocationComponent} from '../create-storage-location/create-storage-location.component';
@@ -70,7 +70,7 @@ export class ShowStorageLocationComponent implements OnInit {
     this.errors = err.pipe(map(err => "Impossible de trouver cet emplacement."))
 
     this.items = this.treeWithChildren.pipe(switchMap(v =>
-      this.obj.getObjects().pipe(map(allObj => allObj.filter(o => objectHasParentLocation(this.inConv ? o.inconvStorageLocationObject : o.storageLocationObject, v?.storageId))))
+      this.obj.objects$.pipe(map(allObj => allObj.filter(o => objectHasParentLocation(this.inConv ? o.inconvStorageLocationObject : o.storageLocationObject, v?.storageId))))
     ));
     this.locationWithParents = this.sl.getStorageWithParents(this.id);
 
@@ -125,7 +125,6 @@ export class ShowStorageLocationComponent implements OnInit {
         this.treeWithChildren = undefined;
 
         this.sl.deleteStorage(this.id).subscribe(res => {
-          this.sl.refresh();
           this.router.navigate(['..'], {relativeTo: this.ar});
         }, fail => {
           Swal.fire('Oups', 'On dirait que ça n\'a pas marché.', 'error');

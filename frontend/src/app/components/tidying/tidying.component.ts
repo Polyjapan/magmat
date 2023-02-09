@@ -1,5 +1,5 @@
 import {AfterViewInit, Component, OnInit, ViewChild} from '@angular/core';
-import {ObjectsService} from '../../services/objects.service';
+import {ObjectsService} from '../../services/stateful/objects.service';
 import {GenericTidyingTree, TidyingTree} from '../../data/tidying';
 import {CompleteObject, SingleObject} from '../../data/object';
 import {debounceTime, distinctUntilChanged, switchMap, tap} from 'rxjs/operators';
@@ -7,6 +7,7 @@ import {MatSlider} from '@angular/material/slider';
 import {combineLatest} from 'rxjs';
 import {NestedTreeControl} from '@angular/cdk/tree';
 import {MatTreeNestedDataSource} from '@angular/material/tree';
+import { TidyingService } from "./tidying.service";
 
 @Component({
   selector: 'app-tidying',
@@ -39,7 +40,7 @@ export class TidyingComponent implements OnInit, AfterViewInit {
     }
   });
 
-  constructor(private os: ObjectsService) {
+  constructor(private tidying: TidyingService) {
   }
 
   hasChild = (_, node: GenericTidyingTree<any> | SingleObject) => !Reflect.has(node, 'length') && !Reflect.has(node, 'objectId');
@@ -104,7 +105,7 @@ export class TidyingComponent implements OnInit, AfterViewInit {
         tap(v => console.log('distinct ' + v)),
         switchMap(pair => {
           const [l, r] = pair;
-          return this.os.getTidyingData(this.invert, l >= 10 ? -1 : l, r >= 10 ? -1 : r).pipe(tap(tree => console.log(tree)));
+          return this.tidying.getTidyingData(this.invert, l >= 10 ? -1 : l, r >= 10 ? -1 : r).pipe(tap(tree => console.log(tree)));
         })
       ).subscribe(tree => {
       this.tree = tree;

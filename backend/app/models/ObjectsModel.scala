@@ -1,6 +1,7 @@
 package models
 
 import anorm.Macro.ColumnNaming
+import anorm.SqlParser.{int, scalar}
 import anorm._
 import data._
 import utils.SqlUtils
@@ -18,6 +19,9 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
       |LEFT JOIN object_types ot on ot.object_type_id = objects.object_type_id
       |LEFT JOIN external_loans el on objects.actual_part_of_loan = el.external_loan_id
       |LEFT JOIN guests e on el.guest_id = e.guest_id
+      |LEFT JOIN (SELECT user, object_id, target_state, row_number() over (partition by object_id order by timestamp desc) as rn
+      |                    FROM object_logs) l
+      |                   on l.rn = 1 and l.object_id = objects.object_id and l.target_state != 'IN_STOCK' and l.target_state != 'DELETED'
       |""".stripMargin
 
   val BeforeLen: Int = 3 + 12 // 12 columns in objects + the 3 magical ones we add
@@ -39,9 +43,9 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
     val lender = Macro.namedParser[Guest]((p: String) => "guests." + ColumnNaming.SnakeCase(p))
     val loan = Macro.namedParser[ExternalLoan]((p: String) => "external_loans." + ColumnNaming.SnakeCase(p))
 
-    objectParser ~ objectType ~ lender.? ~ loan.? map {
-      case obj ~ tpe ~ lender ~ loan =>
-        CompleteObject(obj, tpe, loan.map(loanObject => CompleteExternalLoan.merge(loanObject, None, lender)))
+    objectParser ~ objectType ~ lender.? ~ loan.? ~ int("object_logs.user").? map {
+      case obj ~ tpe ~ lender ~ loan ~ userId =>
+        CompleteObject(obj, tpe, loan.map(loanObject => CompleteExternalLoan.merge(loanObject, None, lender)), None, userId)
     }
   }
 
@@ -222,7 +226,10 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
   }
 
   def getObjectsLoaned(eventId: Option[Int]) = Future(db.withConnection { implicit c =>
-    SQL("SELECT T.object_id, user FROM object_logs ol JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp WHERE target_state != 'IN_STOCK' AND target_state != 'DELETED'")
+    SQL("SELECT T.object_id, user FROM object_logs ol " +
+      "JOIN (SELECT object_id, MAX(timestamp) as latest_log FROM object_logs GROUP BY object_id) T " +
+      "ON T.object_id = ol.object_id AND T.latest_log = ol.timestamp " +
+      "WHERE target_state != 'IN_STOCK' AND target_state != 'DELETED'")
       .as((SqlParser.int("object_id") ~ SqlParser.int("user")).*)
   })
     .map(objects => objects.map { case id ~ user => getOneComplete(id, eventId).map(obj => obj.map(o => (o, user))) })

@@ -1,6 +1,6 @@
 import {StorageTree} from './storage-location';
 import {CompleteExternalLoan} from './external-loan';
-import {ObjectTypesService} from '../services/object-types.service';
+import {ObjectTypesService} from '../services/stateful/object-types.service';
 
 export class ObjectType {
   objectTypeId?: number;

@@ -14,11 +14,28 @@
 
 
   <span class="spacer"></span>
+  <ng-container *ngIf="isLoggedIn">
 
-  <button *ngIf="isLoggedIn" mat-button (click)="logout()">
-    <span *ngIf="!(isHandset$ | async)">Déconnexion</span>
-    <mat-icon>exit_to_app</mat-icon>
-  </button>
+    <div *ngIf="sseStatus$ | async as status">
+      <ng-container [ngSwitch]="status">
+        <span class="label warning" *ngSwitchCase="SSEStatus.CONNECTING">CONNECTION</span>
+        <span class="label success" *ngSwitchCase="SSEStatus.CONNECTED">EN LIGNE</span>
+        <span class="label danger" *ngSwitchCase="SSEStatus.ERROR">DÉCONNECTÉ</span>
+        <span class="label info" *ngSwitchCase="SSEStatus.DISCONNECTED">DÉCONNECTÉ</span>
+        <span class="label danger" *ngSwitchDefault>DÉCONNECTÉ</span>
+      </ng-container>
+    </div>
+
+    <button mat-button (click)="refresh.refresh()">
+      <mat-icon>refresh</mat-icon>
+      <span *ngIf="!(isHandset$ | async)" style="margin-left: .25rem;">Recharger tout</span>
+    </button>
+    <button mat-button (click)="logout()">
+      <mat-icon>exit_to_app</mat-icon>
+      <span *ngIf="!(isHandset$ | async)" style="margin-left: .25rem;">Déconnexion</span>
+    </button>
+  </ng-container>
+
 </mat-toolbar>
 
 <mat-sidenav-container style="min-height: calc(100% - /* hardcoded toolbar size */ 64px);">

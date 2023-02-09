@@ -1,15 +1,15 @@
 import {Component, OnInit, ViewChild} from '@angular/core';
 import {CompleteExternalLoan, LoanState, loanStateToText} from '../../../data/external-loan';
 import {ActivatedRoute} from '@angular/router';
-import {LoansService} from '../../../services/loans.service';
+import {LoansService} from '../../../services/stateful/loans.service';
 import {CompleteObject, ObjectStatus} from '../../../data/object';
-import {ObjectsService} from '../../../services/objects.service';
+import {ObjectsService} from '../../../services/stateful/objects.service';
 import {ObjectType, ObjectTypeAncestry} from '../../../data/object-type';
-import {StorageLocationsService} from '../../../services/storage-locations.service';
+import {StorageLocationsService} from '../../../services/stateful/storage-locations.service';
 import Swal from 'sweetalert2';
 import {SelectObjectTypeComponent} from '../../selectors/select-object-type/select-object-type.component';
 import {Observable} from 'rxjs';
-import {ObjectTypesService} from '../../../services/object-types.service';
+import {ObjectTypesService} from '../../../services/stateful/object-types.service';
 import {map} from 'rxjs/operators';
 
 @Component({
@@ -68,19 +68,9 @@ export class ViewExternalLoanComponent implements OnInit {
   }
 
   refreshObjects() {
-    this.os.getObjects().pipe(map(o => o.filter(obj => obj.partOfLoanObject?.externalLoan?.externalLoanId === this.id))).subscribe(items => this.items = items);
+    this.os.objects$.pipe(map(o => o.filter(obj => obj.partOfLoanObject?.externalLoan?.externalLoanId === this.id))).subscribe(items => this.items = items);
   }
 
-  refreshLoan() {
-    this.ls.forceRefreshLoans();
-    // this.ls.getLoanDirect(this.id).subscribe(l => this.loan = l);
-  }
-
-  refresh() {
-    this.refreshLoan();
-    this.refreshTypes();
-    this.refreshObjects();
-  }
 
   dateFormat(date) {
     if (typeof date === 'string') {
@@ -120,7 +110,6 @@ export class ViewExternalLoanComponent implements OnInit {
           .changeState(this.id, targetState)
           .subscribe(succ => {
             Swal.fire('Changement réussi', undefined, 'success');
-            this.refreshLoan();
             this.changingState = false;
           }, err => {
             this.changingState = false;
