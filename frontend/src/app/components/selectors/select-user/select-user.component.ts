@@ -100,8 +100,8 @@ export class SelectUserComponent extends AbstractSelectorComponent<UserProfile |
           ' ' + guest.location + ' ' + guest.description;
       } else {
         const user = v as UserProfile;
-        return 's' + (user.staffNumber ?? '') + ' ' + user.id + ' ' + user.details.firstName +
-          ' ' + user.details.lastName + ' ' + user.email;
+        return 's' + (user.staffNumber ?? '') + ' ' + user.id + ' ' + user.details.firstName.trim() +
+          ' ' + user.details.lastName.trim() + ' ' + user.details.firstName.trim()  + ' ' + user.email;
       }
     }
     return undefined;
