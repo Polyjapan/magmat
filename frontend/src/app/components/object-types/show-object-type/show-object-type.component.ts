@@ -17,6 +17,8 @@ import { Observable, partition } from 'rxjs';
 import { map, switchMap } from 'rxjs/operators';
 import { MatDialog } from '@angular/material/dialog';
 import { CreateObjectTypeComponent } from '../create-object-type/create-object-type.component';
+import { ExportsService } from "../../../services/exports.service";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-show-object-type',
@@ -37,11 +39,15 @@ export class ShowObjectTypeComponent implements OnInit {
 
   lastChild = lastChild;
 
+  downloading?: boolean = false;
+
   constructor(private route: ActivatedRoute,
               private objectsService: ObjectsService,
               private objectTypeService: ObjectTypesService,
               private router: Router,
-              private dialog: MatDialog) {
+              private dialog: MatDialog,
+              private exports: ExportsService,
+              private snack: MatSnackBar) {
   }
 
   ngOnInit() {
@@ -121,5 +127,17 @@ export class ShowObjectTypeComponent implements OnInit {
           });
       }
     });
+  }
+
+  async export() {
+    this.downloading = true;
+
+    try {
+      await this.exports.exportCategory(this.id)
+    } catch (err) {
+      console.error('Export download failed', err)
+      this.snack.open('Erreur : Impossible de télécharger l\'export', undefined, {duration: 1500})
+    }
+    this.downloading = false;
   }
 }

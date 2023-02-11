@@ -75,3 +75,8 @@ DELETE        /storage/:id                              controllers.StorageContr
 POST          /storage/move/:id                         controllers.StorageController.moveItems(id: Int)
 
 GET           /sse/subscribe                            controllers.SSEController.subscribe(token: Option[String] ?= None)
+
+
+GET         /export/storage/:id.pdf     controllers.ExportController.exportStorage(id: Int)
+GET         /export/type/:id.pdf     controllers.ExportController.exportType(id: Int)
+GET         /export/all.pdf     controllers.ExportController.exportAll()

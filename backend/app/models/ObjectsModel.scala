@@ -75,16 +75,21 @@ class ObjectsModel @Inject()(dbApi: play.api.db.DBApi, users: UsersModel)(implic
 
   def getAllByLocation(locId: Int): Future[List[SingleObjectJson]] = Future(db.withConnection { implicit connection =>
     SQL(
-      """SELECT objects.* FROM objects JOIN object_types ot on objects.object_type_id = ot.object_type_id
-        | WHERE (objects.inconv_storage_location = {loc}
-        | OR objects.storage_location = {loc}
-        | OR ot.inconv_storage_location = {loc}
-        | OR ot.storage_location = {loc}) AND status != 'DELETED'
+      """SELECT objects.* FROM objects
+        | JOIN object_types ot on objects.object_type_id = ot.object_type_id
+        | JOIN objects_event_data oed on objects.object_id = oed.object_id
+        | WHERE (objects.storage_location = {loc}
+        | OR ot.storage_location = {loc}
+        | OR oed.storage_id = {loc}) AND status != 'DELETED'
       """.stripMargin).on("loc" -> locId).as(objectParser.*)
   })
 
   def getAllByLocationComplete(locId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>
-    SQL(completeRequest + " WHERE (objects.actual_inconv_storage = {loc} OR objects.actual_offconv_storage = {loc}) AND objects.status != 'DELETED'").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
+    SQL(completeRequest +
+      " JOIN objects_event_data oed on objects.object_id = oed.object_id" +
+      " WHERE (" +
+        " objects.storage_location = {loc} OR oed.storage_id = {loc}" +
+      ") AND objects.status != 'DELETED'").on("loc" -> locId).asTry(completeObjectParser.*, ObjectTypesModel.storageAliaser(BeforeLen)).get
   }).flatMap(collectReservedFor)
 
   def getAllByLoanComplete(loanId: Int): Future[List[CompleteObject]] = Future(db.withConnection { implicit connection =>

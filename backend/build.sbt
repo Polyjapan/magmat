@@ -4,7 +4,7 @@ lazy val MagmatBackend = (project in file("."))
   .enablePlugins(PlayScala, JavaServerAppPackaging, DockerPlugin)
   .settings(
     name := "MagmatBackend",
-    version := "1.5.0",
+    version := "1.5.2",
     scalaVersion := "2.13.1",
     libraryDependencies ++= Seq(jdbc, evolutions, ehcache, ws, specs2 % Test, guice),
 
@@ -16,6 +16,9 @@ lazy val MagmatBackend = (project in file("."))
     libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.34",
     libraryDependencies += "com.pauldijou" %% "jwt-play" % "4.2.0",
     libraryDependencies += "ch.japanimpact" %% "staff-api" % "1.5.2",
+    libraryDependencies += "com.hhandoko" %% "play28-scala-pdf" % "4.3.0",
+    libraryDependencies += "com.google.zxing" % "core" % "3.4.1",
+    libraryDependencies += "com.google.zxing" % "javase" % "3.4.1",
 
     resolvers += "scalaz-bintray" at "https://dl.bintray.com/scalaz/releases",
     resolvers += "Japan Impact Snapshots" at "https://repository.japan-impact.ch/snapshots",
@@ -28,17 +31,17 @@ lazy val MagmatBackend = (project in file("."))
     ),
 
 
-      javaOptions in Universal ++= Seq(
-          // Provide the PID file
-          s"-Dpidfile.path=/dev/null",
-          // s"-Dpidfile.path=/run/${packageName.value}/play.pid",
+    javaOptions in Universal ++= Seq(
+      // Provide the PID file
+      s"-Dpidfile.path=/dev/null",
+      // s"-Dpidfile.path=/run/${packageName.value}/play.pid",
 
-          // Set the configuration to the production file
-          s"-Dconfig.file=/etc/${packageName.value}/application.conf",
+      // Set the configuration to the production file
+      s"-Dconfig.file=/etc/${packageName.value}/application.conf",
 
-          // Apply DB evolutions automatically
-          "-DapplyEvolutions.default=true"
-      ),
+      // Apply DB evolutions automatically
+      "-DapplyEvolutions.default=true"
+    ),
 
 
     Docker / dockerRepository := Some("registry.japan-impact.ch"),

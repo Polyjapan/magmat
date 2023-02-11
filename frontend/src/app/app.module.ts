@@ -81,6 +81,7 @@ import {MatPaginatorModule} from '@angular/material/paginator';
 import {DragDropModule} from '@angular/cdk/drag-drop';
 import { ObjectCommentsComponent } from './components/object-types/object/object-comments/object-comments.component';
 import { ObjectLogsComponent } from './components/object-types/object/object-logs/object-logs.component';
+import { MatSnackBarModule } from "@angular/material/snack-bar";
 
 export function tokenGetter() {
   return localStorage.getItem('id_token');
@@ -176,8 +177,8 @@ export function tokenGetter() {
     MatTreeModule,
     MatSliderModule,
     MatPaginatorModule,
-    DragDropModule
-
+    DragDropModule,
+    MatSnackBarModule
   ],
   providers: [
     AuthService,

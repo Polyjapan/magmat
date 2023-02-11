@@ -1,6 +1,7 @@
 import java.time.Clock
-
 import com.google.inject.{AbstractModule, Provides}
+import com.hhandoko.play.pdf.PdfGenerator
+import play.api.Environment
 
 /**
  * This class is a Guice module that tells Guice how to bind several
@@ -20,4 +21,6 @@ class ApplicationModule extends AbstractModule {
   @Provides
   def provideClock(): Clock = Clock.systemUTC()
 
+  @Provides
+  def providePdfGenerator(env: Environment): PdfGenerator = new PdfGenerator(env)
 }

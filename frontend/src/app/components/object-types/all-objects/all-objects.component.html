@@ -1,3 +1,16 @@
+<div style="float: right;">
+  <button mat-raised-button
+          (click)="export()"
+          [disabled]="downloading"
+          color="primary"
+          style="margin-right: 10px"
+  >
+    <mat-progress-spinner *ngIf="downloading" style="display: inline-block" color="warn" diameter="24" mode="indeterminate"></mat-progress-spinner>
+    <mat-icon *ngIf="!downloading">print</mat-icon>
+    Imprimer la liste
+  </button>
+ </div>
+
 <h1>Tous les objets</h1>
 
 <ng-container *ngIf="!(objects$ | async)">

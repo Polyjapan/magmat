@@ -9,9 +9,18 @@
 
 <ng-container *ngIf="parents$ | async ; let parent">
   <div style="float: right;">
-    <button mat-raised-button (click)="update(parent)" color="primary" style="margin-right: 10px"><mat-icon>edit</mat-icon> Modifier</button>
-    <button mat-raised-button (click)="create(parent)" color="accent" style="margin-right: 10px"><mat-icon>add</mat-icon> Créer un nouveau</button>
-    <button mat-raised-button (click)="delete()" color="warn"><mat-icon>delete</mat-icon> Supprimer</button>
+    <button (click)="update(parent)" color="primary" mat-raised-button style="margin-right: 10px">
+      <mat-icon>edit</mat-icon>
+      Modifier
+    </button>
+    <button (click)="create(parent)" color="accent" mat-raised-button style="margin-right: 10px">
+      <mat-icon>add</mat-icon>
+      Créer un nouveau
+    </button>
+    <button (click)="delete()" color="warn" mat-raised-button>
+      <mat-icon>delete</mat-icon>
+      Supprimer
+    </button>
   </div>
   <h1>Catégorie {{objectTypeToString(parent)}}</h1>
   <br>
@@ -20,15 +29,33 @@
 
     <div fxFlex>
       <mat-card>
-        <div style="float: right;" *ngIf="(tree$ | async)?.children?.length > 0">
-          <mat-slide-toggle name="displayAll" [(ngModel)]="displayAll" (ngModelChange)="refresh()">Voir aussi les sous catégories</mat-slide-toggle>
+        <div *ngIf="(tree$ | async)?.children?.length > 0" style="float: right;">
+          <mat-slide-toggle (ngModelChange)="refresh()" [(ngModel)]="displayAll" name="displayAll">Voir aussi les sous
+            catégories
+          </mat-slide-toggle>
         </div>
         <mat-card-header>
           <mat-card-title>Objets dans cette catégorie</mat-card-title>
         </mat-card-header>
 
-        <ng-template #loadingItems><mat-spinner></mat-spinner></ng-template>
-        <app-objects-list class="fullWidth" [fullWidth]="true" *ngIf="items$ | async ; let items ; else loadingItems" [objects]="items"></app-objects-list>
+        <mat-card-content>
+          <ng-template #loadingItems>
+            <mat-spinner></mat-spinner>
+          </ng-template>
+          <app-objects-list *ngIf="items$ | async ; let items ; else loadingItems" [fullWidth]="true" [objects]="items"
+                            class="fullWidth"></app-objects-list>
+
+        </mat-card-content>
+
+        <mat-card-actions align="end">
+          <button (click)="export()" [disabled]="downloading" mat-button>
+            <mat-icon style="margin-right: 4px; vertical-align: text-top; font-size: 17px; height: 17px;">print
+            </mat-icon>
+            IMPRIMER LA LISTE
+          </button>
+        </mat-card-actions>
+        <mat-progress-bar *ngIf="downloading" mode="indeterminate"
+                          style="position: absolute; left: 0; right: 0; bottom: 0"></mat-progress-bar>
 
       </mat-card>
     </div>
@@ -38,7 +65,7 @@
         <mat-card-header>
           <mat-card-title>Propriétés</mat-card-title>
         </mat-card-header>
-        <mat-table mat-card-content [dataSource]="objectTypeData(parent)" class="fullWidth">
+        <mat-table [dataSource]="objectTypeData(parent)" class="fullWidth" mat-card-content>
           <ng-container matColumnDef="property">
             <mat-cell *matCellDef="let elem"><b>{{elem[0]}}</b></mat-cell>
           </ng-container>
@@ -47,8 +74,8 @@
             <mat-cell *matCellDef="let elem">{{elem[1]}} </mat-cell>
           </ng-container>
 
-          <mat-row style="height: 40px" *matRowDef="let row; columns: ['property', 'value'];" [routerLink]="row[2]"
-                   [class.hover]="row[2]"></mat-row>
+          <mat-row *matRowDef="let row; columns: ['property', 'value'];" [class.hover]="row[2]" [routerLink]="row[2]"
+                   style="height: 40px"></mat-row>
         </mat-table>
 
         <mat-card-actions>
@@ -89,8 +116,9 @@
             chaque objet ajouté. Le préfixe de suffixe est facultatif.</p>
           <p><i>Exemple: si le préfixe de suffixe est "Asus" et le numéro de départ "03", les objets auront pour nom
             <b>{{lastChild(parent).name}} Asus 03</b>, <b>{{lastChild(parent).name}} Asus 04</b>, ...</i></p>
-          <p><b>Pour ajouter des objets qui sont prêtés à PJ le temps de l'event, merci d'utiliser le formulaire sur la page du prêt.</b></p>
-          <app-quick-item-create [objectType]="lastChild(parent)" (createSuccess)="refresh()"
+          <p><b>Pour ajouter des objets qui sont prêtés à PJ le temps de l'event, merci d'utiliser le formulaire sur la
+            page du prêt.</b></p>
+          <app-quick-item-create (createSuccess)="refresh()" [objectType]="lastChild(parent)"
                                  style="width: 100%;"></app-quick-item-create>
         </mat-card-content>
       </mat-card>

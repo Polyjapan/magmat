@@ -1,0 +1,52 @@
+@import services.PDFExportService.ObjectLine
+@(title: String, headCode: Option[String], lines: List[ObjectLine])
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <style>
+            td, th {
+                border-bottom: 1px solid black;
+                padding: 4px;
+                padding-top: 8px;
+                padding-bottom: 8px;
+            }
+
+            table {
+                border-collapse: collapse;
+                width: 100%;
+                page-break-inside: auto;
+            }
+
+            tr {
+                page-break-inside: avoid;
+                page-break-after: auto
+            }
+
+            body {
+                font-family: sans-serif;
+            }
+        </style>
+    </head>
+
+    <body>
+        <h1>@title</h1>
+
+        <table>
+            <tr>
+                <th>Asset tag</th>
+                <th>Objet</th>
+                <th>Code barre</th>
+            </tr>
+
+            @for(line <- lines) {
+                <tr>
+                    <td>@line.assetTag</td>
+                    <td>@line.name</td>
+                    <td style="text-align: center"><img src="@line.barcodeUri" /></td>
+                </tr>
+            }
+        </table>
+
+    </body>
+</html>

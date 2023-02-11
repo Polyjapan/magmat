@@ -17,6 +17,8 @@ import {MatDialog} from '@angular/material/dialog';
 import {map, switchMap, tap} from 'rxjs/operators';
 import {MatTableDataSource} from '@angular/material/table';
 import {MatSlideToggleChange} from '@angular/material/slide-toggle';
+import { ExportsService } from "../../../services/exports.service";
+import { MatSnackBar } from "@angular/material/snack-bar";
 
 @Component({
   selector: 'app-show-storage-location',
@@ -27,6 +29,8 @@ export class ShowStorageLocationComponent implements OnInit {
   id: number | null = null;
   inConv: boolean = false;
   eventId?: number = undefined;
+
+  downloading?: boolean = false;
 
 
   errors: Observable<string>;
@@ -39,7 +43,13 @@ export class ShowStorageLocationComponent implements OnInit {
 
   displayAll: boolean = true;
 
-  constructor(private ar: ActivatedRoute, private router: Router, private sl: StorageLocationsService, private obj: ObjectsService, private dialog: MatDialog) {
+  constructor(private ar: ActivatedRoute,
+              private router: Router,
+              private sl: StorageLocationsService,
+              private obj: ObjectsService,
+              private dialog: MatDialog,
+              private exports: ExportsService,
+              private snack: MatSnackBar) {
   }
 
   ngOnInit() {
@@ -132,5 +142,17 @@ export class ShowStorageLocationComponent implements OnInit {
         });
       }
     });
+  }
+
+  async export() {
+    this.downloading = true;
+
+    try {
+      await this.exports.exportStorage(this.id)
+    } catch (err) {
+      console.error('Export download failed', err)
+      this.snack.open('Erreur : Impossible de télécharger l\'export', undefined, {duration: 1500})
+    }
+    this.downloading = false;
   }
 }
